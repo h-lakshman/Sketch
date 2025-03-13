@@ -8,7 +8,8 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "@types/jsonwebtoken": "^9.0.9"
   },
   "scripts": {
     "start": "node dist/index.js",
@@ -16,7 +17,9 @@
     "dev": "npm run build && npm run start"
   },
   "dependencies": {
+    "@repo/server-common": "workspace:*",
     "@types/ws": "^8.18.0",
+    "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1"
   }
 }
