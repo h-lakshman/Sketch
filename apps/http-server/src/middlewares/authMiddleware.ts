@@ -6,19 +6,47 @@ export const authMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-  const token = req.headers.authorization || "";
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+): void => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res
+        .status(401)
+        .json({ message: "Missing or invalid authorization header" });
+      return;
+    }
 
-  const decoded = jwt.verify(token, JWT_SECRET) as {
-    username: string;
-  };
-  if (!decoded) {
-    return res.status(401).json({ message: "Unauthorized" });
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No token provided" });
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      name: string;
+    };
+
+    req.user = decoded;
+
+    next();
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({ message: "Invalid or expired token" });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error" });
+    return;
   }
-  (req as any).user = decoded;
-  next();
 };
- 
+
+declare global {
+  namespace Express {
+    interface Request {
+      user: {
+        userId: string;
+        name: string;
+      };
+    }
+  }
+}
