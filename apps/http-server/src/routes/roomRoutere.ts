@@ -13,7 +13,18 @@ roomRouter.post("/", authMiddleware, async (req, res) => {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
-    console.log(req.user);
+
+    const roomExists = await prismaClient.room.findFirst({
+      where: {
+        slug: slug,
+      },
+    });
+    if (roomExists) {
+      res.status(400).json({
+        error: "Room already exists",
+      });
+      return;
+    }
     const room = await prismaClient.room.create({
       data: {
         slug,
@@ -34,7 +45,7 @@ roomRouter.post("/", authMiddleware, async (req, res) => {
     console.error(error);
     res.status(500).json({
       error: "Internal server error",
-    });
+    }); 
   }
 });
 
