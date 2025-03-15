@@ -50,6 +50,7 @@ function joinRoom(user: User, roomId: string) {
     return;
   }
   user.rooms.add(roomId);
+  console.log(user.rooms);
   user.ws.send(
     JSON.stringify({ type: "success", message: `Joined room ${roomId}` })
   );
@@ -57,7 +58,7 @@ function joinRoom(user: User, roomId: string) {
     user,
     {
       type: "notification",
-      message: `${user.name} has left the room`,
+      message: `${user.name} has joined the room`,
       timestamp: new Date().toISOString(),
       user: user.name,
     },
@@ -114,7 +115,7 @@ function sendMessage(user: User, roomId: string, message: string) {
 function broadCastToRoom(user: User, message: Message, roomId: string) {
   users.forEach((u) => {
     if (u.rooms.has(roomId) && u.ws != user.ws) {
-      user.ws.send(JSON.stringify(message));
+      u.ws.send(JSON.stringify(message));
     }
   });
 }
