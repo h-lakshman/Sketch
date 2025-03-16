@@ -81,7 +81,7 @@ roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
       },
       include: {
         user: {
-          select: { id: true, name: true },
+          select: { name: true },
         },
       },
     });
