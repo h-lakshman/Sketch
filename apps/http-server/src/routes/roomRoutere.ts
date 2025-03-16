@@ -79,6 +79,7 @@ roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
       orderBy: {
         createdAt: "desc",
       },
+      take: 50,
       include: {
         user: {
           select: { name: true },
