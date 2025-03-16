@@ -3,6 +3,7 @@ import { JWT_SECRET } from "@repo/server-common/config";
 import { IncomingMessage } from "http";
 import jwt from "jsonwebtoken";
 import { parse } from "url";
+import { prismaClient } from "@repo/db/client";
 const wss = new WebSocketServer({ port: 8080 });
 
 interface User {
@@ -18,7 +19,15 @@ interface Message {
   message: string;
   timestamp: string;
 }
+interface QueuedMessage {
+  userId: string;
+  roomId: string;
+  message: string;
+  timestamp: string;
+}
+
 const users: Map<string, User> = new Map();
+const queuedMessages: Map<string, Message[]> = new Map();
 
 const authMiddleware = (req: IncomingMessage) => {
   if (!req.url) {
@@ -42,7 +51,16 @@ const authMiddleware = (req: IncomingMessage) => {
   }
 };
 
-function joinRoom(user: User, roomId: string) {
+async function joinRoom(user: User, roomId: string) {
+  const room = await prismaClient.room.findUnique({
+    where: {
+      id: roomId,
+    },
+  });
+  if (!room) {
+    user.ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
+    return;
+  }
   if (user.rooms.has(roomId)) {
     user.ws.send(
       JSON.stringify({ type: "error", message: "Already joined this room" })
@@ -50,7 +68,7 @@ function joinRoom(user: User, roomId: string) {
     return;
   }
   user.rooms.add(roomId);
-  console.log(user.rooms);
+
   user.ws.send(
     JSON.stringify({ type: "success", message: `Joined room ${roomId}` })
   );
@@ -105,13 +123,40 @@ function sendMessage(user: User, roomId: string, message: string) {
   const timestamp = new Date().toISOString();
   const chatMessage: Message = {
     type: "chat",
-    user: user.name,
+    user: user.id,
     message,
     timestamp,
   };
+
+  queuedMessages.get(roomId)?.push(chatMessage) ??
+    queuedMessages.set(roomId, [chatMessage]);
+  processQueue(roomId);
+
   broadCastToRoom(user, chatMessage, roomId);
 }
 
+async function processQueue(roomId: string) {
+  const messages = queuedMessages.get(roomId);
+  if (!messages || messages.length === 0) return;
+  while (messages.length > 0) {
+    const message = messages.shift();
+    if (!message) continue;
+    try {
+      await prismaClient.chat.create({
+        data: {
+          message: message.message,
+          roomId: roomId,
+          userId: message.user,
+          createdAt: message.timestamp,
+        },
+      });
+    } catch (error) {
+      console.error("Error storing message:", error);
+      queuedMessages.set(roomId, [...messages, message]);
+      break;
+    }
+  }
+}
 function broadCastToRoom(user: User, message: Message, roomId: string) {
   users.forEach((u) => {
     if (u.rooms.has(roomId) && u.ws != user.ws) {
@@ -159,18 +204,18 @@ wss.on("connection", function connection(ws, req) {
       );
     }
   });
-  // ws.on("close", () => {
-  //   users.delete(currUser.id);
-  //   const message = {
-  //     type: "notification",
-  //     message: `${currUser.name} has left the room`,
-  //     user: currUser.name,
-  //     timestamp: new Date().toISOString(),
-  //   };
-  //   currUser.rooms.forEach((roomId) => {
-  //     broadCastToRoom(currUser, message, roomId);
-  //   });
-  // });
+  ws.on("close", () => {
+    users.delete(currUser.id);
+    const message = {
+      type: "notification",
+      message: `${currUser.name} has left the room`,
+      user: currUser.name,
+      timestamp: new Date().toISOString(),
+    };
+    currUser.rooms.forEach((roomId) => {
+      broadCastToRoom(currUser, message, roomId);
+    });
+  });
 
   ws.send(
     JSON.stringify({ type: "success", message: "Connection established" })
