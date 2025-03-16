@@ -4,7 +4,7 @@ import { prismaClient } from "@repo/db/client";
 
 const roomRouter: Router = Router();
 
-roomRouter.post("/", authMiddleware, async (req, res) => {
+roomRouter.post("/create-room", authMiddleware, async (req, res) => {
   try {
     const user = req.user;
     const { name } = req.body;
@@ -45,7 +45,90 @@ roomRouter.post("/", authMiddleware, async (req, res) => {
     console.error(error);
     res.status(500).json({
       error: "Internal server error",
-    }); 
+    });
+  }
+});
+roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
+  const { slug } = req.params;
+  //in future only allow ppl who are in the room to see the chat
+  if (!slug) {
+    res.status(400).json({
+      error: "Room ID is required",
+    });
+    return;
+  }
+  try {
+    const room = await prismaClient.room.findUnique({
+      where: {
+        slug: slug,
+      },
+    });
+
+    if (!room) {
+      res.status(404).json({
+        error: "Room not found",
+      });
+      return;
+    }
+    const chats = await prismaClient.chat.findMany({
+      where: {
+        room: {
+          slug: slug,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        user: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    res.status(200).json({
+      message: "Chat fetched successfully",
+      chats,
+    });
+    return;
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
+roomRouter.get("/:slug", authMiddleware, async (req, res) => {
+  const { slug } = req.params;
+  if (!slug) {
+    res.status(400).json({
+      error: "Room ID is required",
+    });
+    return;
+  }
+  try {
+    const room = await prismaClient.room.findUnique({
+      where: {
+        slug: slug,
+      },
+    });
+    if (!room) {
+      res.status(404).json({
+        error: "Room not found",
+      });
+      return;
+    }
+    res.status(200).json({
+      message: "Room fetched successfully",
+      room,
+    });
+    return;
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
