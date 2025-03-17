@@ -1,6 +1,13 @@
 import axios from "axios";
 import { create } from "zustand";
 
+const getInitialAuthState = () => {
+  if (typeof window !== "undefined") {
+    return !!localStorage.getItem("token");
+  }
+  return false;
+};
+
 interface AuthStore {
   token: string | null;
   formData: {
@@ -31,7 +38,7 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     lastName: "",
   },
   error: "",
-  isAuthenticated: !!localStorage.getItem("token"),
+  isAuthenticated: getInitialAuthState(),
   loading: false,
   loginSuccess: false,
   signUpSuccess: false,
@@ -43,13 +50,14 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   signIn: async (username: string, password: string) => {
-    set({ loading: true, error: "", loginSuccess: false });
-    const request = await axios.post("http://localhost:3001/auth/login", {
-      username: username,
-      password: password,
-    });
-    const data = request.data;
     try {
+      set({ loading: true, error: "", loginSuccess: false });
+      const request = await axios.post("http://localhost:3001/auth/login", {
+        username: username,
+        password: password,
+      });
+      const data = request.data;
+
       set({
         token: data.token,
         isAuthenticated: true,
@@ -58,12 +66,15 @@ const useAuthStore = create<AuthStore>((set, get) => ({
         signUpSuccess: false,
         error: "",
       });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user_name", data.user.name);
-      localStorage.setItem("user_email", data.user.email);
-    } catch (error) {
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user_name", data.user.name);
+        localStorage.setItem("user_email", data.user.email);
+      }
+    } catch (error: any) {
       set({
-        error: data.error || "An unexpected error occurred",
+        error: error.response?.data?.error || "An unexpected error occurred",
         loading: false,
         isAuthenticated: false,
         token: null,
@@ -74,23 +85,25 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   signUp: async (username: string, password: string, name: string) => {
-    set({ loading: true, error: "", signUpSuccess: false });
-    const request = await axios.post("http://localhost:3001/auth/register", {
-      username: username,
-      password: password,
-      name: name,
-    });
-    const data = request.data;
     try {
-      set({
-        loading: false,
-        loginSuccess: false,
-        signUpSuccess: true,
-        error: "",
+      set({ loading: true, error: "", signUpSuccess: false });
+      const request = await axios.post("http://localhost:3001/auth/register", {
+        username: username,
+        password: password,
+        name: name,
       });
-    } catch (error) {
+      const data = request.data;
+      if (request.status === 200) {
+        set({
+          loading: false,
+          loginSuccess: false,
+          signUpSuccess: true,
+          error: "",
+        });
+      }
+    } catch (error: any) {
       set({
-        error: data.error || "An unexpected error occurred",
+        error: error.response?.data?.error || "An unexpected error occurred",
         loading: false,
         isAuthenticated: false,
         token: null,
