@@ -4,6 +4,7 @@ import { IncomingMessage } from "http";
 import jwt from "jsonwebtoken";
 import { parse } from "url";
 import { prismaClient } from "@repo/db/client";
+
 const wss = new WebSocketServer({ port: 8080 });
 
 interface User {
@@ -13,38 +14,44 @@ interface User {
   rooms: Set<string>;
 }
 
-interface Message {
-  type: string;
-  user: string;
-  message: string;
-  timestamp: string;
+// Enum for different shape types
+enum ShapeType {
+  RECTANGLE = "RECTANGLE",
 }
-interface QueuedMessage {
-  userId: string;
-  roomId: string;
-  message: string;
+
+interface RectangleData {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+type ShapeData = RectangleData; // Extend this when adding more shape types
+
+interface DrawMessage {
+  type: "draw" | "notification" | "error" | "success";
+  user: string;
+  roomId?: string;
+  shapeType?: ShapeType;
+  shapeData?: ShapeData;
+  message?: string;
   timestamp: string;
 }
 
+const queuedMessages: Map<string, DrawMessage[]> = new Map();
 const users: Map<string, User> = new Map();
-const queuedMessages: Map<string, Message[]> = new Map();
 
 const authMiddleware = (req: IncomingMessage) => {
-  if (!req.url) {
-    return null;
-  }
+  if (!req.url) return null;
   const parameters = parse(req.url, true);
   const token = parameters.query.token as string;
+  if (!token) return null;
 
-  if (!token) {
-    return null;
-  }
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: string;
       name: string;
     };
-
     return decoded;
   } catch (error) {
     return null;
@@ -52,26 +59,36 @@ const authMiddleware = (req: IncomingMessage) => {
 };
 
 async function joinRoom(user: User, roomId: string) {
-  const room = await prismaClient.room.findUnique({
-    where: {
-      id: roomId,
-    },
-  });
+  const room = await prismaClient.room.findUnique({ where: { id: roomId } });
   if (!room) {
-    user.ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
+    user.ws.send(
+      JSON.stringify({
+        type: "error",
+        message: "Room not found",
+        timestamp: new Date().toISOString(),
+      })
+    );
     return;
   }
   if (user.rooms.has(roomId)) {
     user.ws.send(
-      JSON.stringify({ type: "error", message: "Already joined this room" })
+      JSON.stringify({
+        type: "error",
+        message: "Already joined this room",
+        timestamp: new Date().toISOString(),
+      })
     );
     return;
   }
   user.rooms.add(roomId);
-
   user.ws.send(
-    JSON.stringify({ type: "success", message: `Joined room ${roomId}` })
+    JSON.stringify({
+      type: "success",
+      message: `Joined room ${roomId}`,
+      timestamp: new Date().toISOString(),
+    })
   );
+
   broadCastToRoom(
     user,
     {
@@ -79,6 +96,7 @@ async function joinRoom(user: User, roomId: string) {
       message: `${user.name} has joined the room`,
       timestamp: new Date().toISOString(),
       user: user.name,
+      roomId,
     },
     roomId
   );
@@ -89,15 +107,21 @@ function leaveRoom(user: User, roomId: string) {
     user.ws.send(
       JSON.stringify({
         type: "error",
-        message: "Unexpected error,Not joined in this room",
+        message: "Not joined in this room",
+        timestamp: new Date().toISOString(),
       })
     );
     return;
   }
   user.rooms.delete(roomId);
   user.ws.send(
-    JSON.stringify({ type: "success", message: `Left room ${roomId}` })
+    JSON.stringify({
+      type: "success",
+      message: `Left room ${roomId}`,
+      timestamp: new Date().toISOString(),
+    })
   );
+
   broadCastToRoom(
     user,
     {
@@ -105,68 +129,86 @@ function leaveRoom(user: User, roomId: string) {
       message: `${user.name} has left the room`,
       timestamp: new Date().toISOString(),
       user: user.name,
+      roomId,
     },
     roomId
   );
 }
 
-function sendMessage(user: User, roomId: string, message: string) {
+function handleDraw(
+  user: User,
+  roomId: string,
+  shapeType: ShapeType,
+  shapeData: ShapeData
+) {
   if (!user.rooms.has(roomId)) {
     user.ws.send(
       JSON.stringify({
         type: "error",
-        message: "Unexpected error,Not authorized to send message in this room",
+        message: "Not authorized to draw in this room",
+        timestamp: new Date().toISOString(),
       })
     );
     return;
   }
+
   const timestamp = new Date().toISOString();
-  const chatMessage: Message = {
-    type: "chat",
+  const drawMessage: DrawMessage = {
+    type: "draw",
     user: user.id,
-    message,
+    roomId,
+    shapeType,
+    shapeData,
     timestamp,
   };
 
-  queuedMessages.get(roomId)?.push(chatMessage) ??
-    queuedMessages.set(roomId, [chatMessage]);
+  queuedMessages.set(roomId, [
+    ...(queuedMessages.get(roomId) || []),
+    drawMessage,
+  ]);
   processQueue(roomId);
 
-  broadCastToRoom(user, chatMessage, roomId);
+  broadCastToRoom(user, drawMessage, roomId);
 }
 
 async function processQueue(roomId: string) {
   const messages = queuedMessages.get(roomId);
   if (!messages || messages.length === 0) return;
+
   while (messages.length > 0) {
     const message = messages.shift();
     if (!message) continue;
+
     try {
-      await prismaClient.chat.create({
-        data: {
-          message: message.message,
-          roomId: roomId,
-          userId: message.user,
-          createdAt: message.timestamp,
-        },
-      });
+      if (message.shapeType === ShapeType.RECTANGLE && message.shapeData) {
+        const { x, y, width, height } = message.shapeData as RectangleData;
+        await prismaClient.shape.create({
+          data: {
+            type: ShapeType.RECTANGLE,
+            user: { connect: { id: message.user } },
+            room: { connect: { id: roomId } },
+            rectangle: { create: { x, y, width, height } },
+          },
+        });
+      }
     } catch (error) {
-      console.error("Error storing message:", error);
+      console.error("Error storing shape data:", error);
       queuedMessages.set(roomId, [...messages, message]);
       break;
     }
   }
 }
-function broadCastToRoom(user: User, message: Message, roomId: string) {
+
+function broadCastToRoom(user: User, message: DrawMessage, roomId: string) {
   users.forEach((u) => {
-    if (u.rooms.has(roomId) && u.ws != user.ws) {
+    if (u.rooms.has(roomId) && u.ws !== user.ws) {
       u.ws.send(JSON.stringify(message));
     }
   });
 }
+
 wss.on("connection", function connection(ws, req) {
   const decoded = authMiddleware(req);
-
   if (!decoded) {
     ws.close(1008, "Authentication failed or user already connected");
     return;
@@ -189,35 +231,53 @@ wss.on("connection", function connection(ws, req) {
         case "leave":
           leaveRoom(currUser, parsedData.roomId);
           break;
-        case "chat":
-          sendMessage(currUser, parsedData.roomId, parsedData.message);
+        case "draw":
+          handleDraw(
+            currUser,
+            parsedData.roomId,
+            parsedData.shapeType,
+            parsedData.shapeData
+          );
           break;
         default:
           ws.send(
-            JSON.stringify({ type: "error", message: "Invalid message format" })
+            JSON.stringify({
+              type: "error",
+              message: "Invalid message format",
+              timestamp: new Date().toISOString(),
+            })
           );
       }
     } catch (error) {
       console.error("Error parsing message:", error);
       ws.send(
-        JSON.stringify({ type: "error", message: "Invalid message format" })
+        JSON.stringify({
+          type: "error",
+          message: "Invalid message format",
+          timestamp: new Date().toISOString(),
+        })
       );
     }
   });
+
   ws.on("close", () => {
     users.delete(currUser.id);
-    const message = {
+    const notification: DrawMessage = {
       type: "notification",
       message: `${currUser.name} has left the room`,
       user: currUser.name,
       timestamp: new Date().toISOString(),
     };
     currUser.rooms.forEach((roomId) => {
-      broadCastToRoom(currUser, message, roomId);
+      broadCastToRoom(currUser, { ...notification, roomId }, roomId);
     });
   });
 
   ws.send(
-    JSON.stringify({ type: "success", message: "Connection established" })
+    JSON.stringify({
+      type: "success",
+      message: "Connection established",
+      timestamp: new Date().toISOString(),
+    })
   );
 });
