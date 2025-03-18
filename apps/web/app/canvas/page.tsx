@@ -1,7 +1,5 @@
-import React from "react";
+import CanvasLogic from "./CanvasLogic";
 
-const CanvasPage = () => {
-  return <div>CanvasPage</div>;
-};
-
-export default CanvasPage;
+export default function CanvasPage() {
+  return <CanvasLogic />;
+}
