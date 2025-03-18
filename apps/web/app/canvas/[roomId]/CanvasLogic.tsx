@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import { WEBSOCKET_URL } from "@/app/config";
+import React, { useEffect, useRef, useState } from "react";
 
 enum ShapeType {
   Rectangle = "rectangle",
@@ -39,12 +40,13 @@ const renderShapes = (ctx: CanvasRenderingContext2D, shapes: Shapes[]) => {
   });
 };
 
-const CanvasPage = () => {
+const CanvasPage = ({ socket, roomId }: { socket: WebSocket, roomId: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const existingShapes = useRef<Shapes[]>([]);
+
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -69,6 +71,7 @@ const CanvasPage = () => {
       console.log("canvas context not found");
       return;
     }
+    renderShapes(ctx, existingShapes.current);
 
     const handleMouseDown = (e: MouseEvent) => {
       isDrawingRef.current = true;
