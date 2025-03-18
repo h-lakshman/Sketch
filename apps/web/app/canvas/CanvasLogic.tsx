@@ -20,12 +20,20 @@ const CanvasPage = () => {
   const startXRef = useRef(0);
   const startYRef = useRef(0);
 
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
 
     if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    resizeCanvas();
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -50,11 +58,12 @@ const CanvasPage = () => {
     canvas.addEventListener("mousedown", handleMouseDown);
     canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("mouseup", handleMouseUp);
-
+    window.addEventListener("resize", resizeCanvas); 
     return () => {
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("resize", resizeCanvas);
     };
   }, []);
   return (
