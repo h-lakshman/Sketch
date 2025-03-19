@@ -1,11 +1,19 @@
 "use client";
 import { getShapes } from "@/app/utils/api";
 import React, { useEffect, useRef } from "react";
-import {
-  ShapeType,
-  Shapes,
-  WebSocketDrawMessage,
-} from "@repo/common/canvasTypes";
+
+enum ShapeType {
+  Rectangle = "RECTANGLE",
+}
+
+interface Rectangle {
+  type: ShapeType.Rectangle;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+type Shapes = Rectangle;
 
 const drawRect = (
   ctx: CanvasRenderingContext2D,
@@ -30,17 +38,20 @@ const renderShapes = (ctx: CanvasRenderingContext2D, shapes: Shapes[]) => {
   }
   console.log("shapes:- ", shapes);
   shapes.forEach((shape) => {
-    if (shape.type === ShapeType.RECTANGLE) {
+    if (shape.type === ShapeType.Rectangle) {
       drawRect(ctx, shape.x, shape.y, shape.width, shape.height);
     }
   });
 };
 //add ws handlers
-const CanvasPage: React.FC<{
+const CanvasPage = ({
+  socket,
+  roomId,
+}: {
   socket: WebSocket;
   roomId: string;
-}> = ({ socket, roomId }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
@@ -73,7 +84,7 @@ const CanvasPage: React.FC<{
     const fetchShapes = async () => {
       const response = await getShapes(roomId);
       existingShapes.current = response.shapes.map((shape: any) => ({
-        type: ShapeType.RECTANGLE,
+        type: ShapeType.Rectangle,
         x: shape.rectangle.x,
         y: shape.rectangle.y,
         width: shape.rectangle.width,
@@ -116,7 +127,7 @@ const CanvasPage: React.FC<{
       const width = e.clientX - startXRef.current;
       const height = e.clientY - startYRef.current;
       const shape: Shapes = {
-        type: ShapeType.RECTANGLE,
+        type: ShapeType.Rectangle,
         x: startXRef.current,
         y: startYRef.current,
         width,
@@ -132,9 +143,9 @@ const CanvasPage: React.FC<{
         JSON.stringify({
           type: "draw",
           roomId,
-          shapeType: ShapeType.RECTANGLE,
+          shapeType: ShapeType.Rectangle,
           shapeData: shape,
-        } as WebSocketDrawMessage)
+        })
       );
     };
     canvas.addEventListener("mousedown", handleMouseDown);

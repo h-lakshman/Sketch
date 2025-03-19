@@ -14,7 +14,6 @@
     "@mui/icons-material": "^6.4.7",
     "@mui/lab": "6.0.0-beta.30",
     "@mui/material": "^6.4.7",
-    "@repo/common": "workspace:*",
     "axios": "^1.8.3",
     "next": "15.2.2",
     "react": "^19.0.0",

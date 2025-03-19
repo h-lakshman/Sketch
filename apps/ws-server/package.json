@@ -19,7 +19,6 @@
   "dependencies": {
     "@repo/server-common": "workspace:*",
     "@repo/db": "workspace:*",
-    "@repo/common": "workspace:*",
     "@types/ws": "^8.18.0",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1"
