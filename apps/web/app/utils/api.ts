@@ -23,16 +23,9 @@ api.interceptors.response.use(
   }
 );
 
-export const signIn = async (username: string, password: string) => {
-  const response = await api.post("/auth/login", { username, password });
+export const getShapes = async (roomId: string) => {
+  
+  const response = await api.get(`/room/${roomId}/shapes`);
   return response.data;
 };
-
-export const signUp = async (username: string, password: string) => {
-  const response = await api.post("/auth/register", {
-    username,
-    password,
-    name,
-  });
-  return response.data;
-};
+  
