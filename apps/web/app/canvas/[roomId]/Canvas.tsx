@@ -1,6 +1,6 @@
 "use client";
 import AuthLoading from "@/app/(auth)/loading";
-import { WEBSOCKET_URL } from "@/app/config";
+import { BACKEND_URL, WEBSOCKET_URL } from "@/app/config";
 import { useEffect, useState } from "react";
 import CanvasLogic from "./CanvasLogic";
 
@@ -10,13 +10,30 @@ export default function Canvas({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     const newSocket = new WebSocket(
-      WEBSOCKET_URL + `?token=${localStorage.getItem("token")}`
+      WEBSOCKET_URL + `/?token=${localStorage.getItem("token")}`
     );
 
     newSocket.onopen = () => {
       console.log("Connected to websocket server");
+
       setSocket(newSocket);
       setIsConnected(true);
+      newSocket.send(
+        JSON.stringify({
+          type: "join",
+          roomId: roomId,
+        })
+      );
+    };
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "success") {
+        alert(data.message);
+      } else if (data.type === "error") {
+        alert(data.message);
+      } else if (data.type === "draw") {
+        console.log(data);
+      }
     };
 
     newSocket.onerror = (error) => {
