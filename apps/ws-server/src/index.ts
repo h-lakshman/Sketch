@@ -4,6 +4,13 @@ import { IncomingMessage } from "http";
 import jwt from "jsonwebtoken";
 import { parse } from "url";
 import { prismaClient } from "@repo/db/client";
+import {
+  ShapeType,
+  ShapeData,
+  RectangleData,
+  DrawMessage,
+  WebSocketMessage,
+} from "@repo/common/canvasTypes";
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -12,30 +19,6 @@ interface User {
   name: string;
   ws: WebSocket;
   rooms: Set<string>;
-}
-
-// Enum for different shape types
-enum ShapeType {
-  RECTANGLE = "RECTANGLE",
-}
-
-interface RectangleData {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-type ShapeData = RectangleData; // Extend this when adding more shape types
-
-interface DrawMessage {
-  type: "draw" | "notification" | "error" | "success";
-  user: string;
-  roomId?: string;
-  shapeType?: ShapeType;
-  shapeData?: ShapeData;
-  message?: string;
-  timestamp: string;
 }
 
 const queuedMessages: Map<string, DrawMessage[]> = new Map();
