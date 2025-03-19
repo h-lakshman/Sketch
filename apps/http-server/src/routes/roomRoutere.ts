@@ -48,10 +48,10 @@ roomRouter.post("/create-room", authMiddleware, async (req, res) => {
     });
   }
 });
-roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
-  const { slug } = req.params;
+roomRouter.get("/:id/shapes", authMiddleware, async (req, res) => {
+  const { id } = req.params;
   //in future only allow ppl who are in the room to see the chat
-  if (!slug) {
+  if (!id) {
     res.status(400).json({
       error: "Room ID is required",
     });
@@ -60,7 +60,7 @@ roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
   try {
     const room = await prismaClient.room.findUnique({
       where: {
-        slug: slug,
+        id: id,
       },
     });
 
@@ -70,10 +70,10 @@ roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
       });
       return;
     }
-    const chats = await prismaClient.chat.findMany({
+    const shapes = await prismaClient.shape.findMany({
       where: {
         room: {
-          slug: slug,
+          id: id,
         },
       },
       orderBy: {
@@ -81,15 +81,13 @@ roomRouter.get("/:slug/chats", authMiddleware, async (req, res) => {
       },
       take: 50,
       include: {
-        user: {
-          select: { name: true },
-        },
+        rectangle: true,
       },
     });
 
     res.status(200).json({
-      message: "Chat fetched successfully",
-      chats,
+      message: "Shapes fetched successfully",
+      shapes,
     });
     return;
   } catch (error) {
