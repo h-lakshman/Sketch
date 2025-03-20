@@ -7,6 +7,13 @@ const getInitialAuthState = () => {
   }
   return false;
 };
+const removeLocalStorageData = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_name");
+    localStorage.removeItem("user_email");
+  }
+};
 
 interface AuthStore {
   token: string | null;
@@ -25,6 +32,7 @@ interface AuthStore {
   setError: (error: string) => void;
   signIn: (username: string, password: string) => Promise<void>;
   signUp: (username: string, password: string, name: string) => Promise<void>;
+  signOut: () => void;
   setLoginSuccess: (bool: boolean) => void;
   setSignUpSuccess: (bool: boolean) => void;
 }
@@ -110,6 +118,12 @@ const useAuthStore = create<AuthStore>((set, get) => ({
         loginSuccess: false,
         signUpSuccess: false,
       });
+    }
+  },
+  signOut: () => {
+    set({ token: null, isAuthenticated: false });
+    if (typeof window !== "undefined") {
+      removeLocalStorageData();
     }
   },
   setLoginSuccess: (bool: boolean) => {
