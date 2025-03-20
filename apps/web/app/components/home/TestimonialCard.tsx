@@ -1,5 +1,3 @@
-"use client";
-
 import { Avatar, Card, CardContent, Box, Typography } from "@mui/material";
 
 interface TestimonialCardProps {

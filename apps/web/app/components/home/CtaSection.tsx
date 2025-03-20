@@ -1,7 +1,5 @@
-"use client";
-
-import { Box, Button, Container, Typography } from "@mui/material";
-import Link from "next/link";
+import { Box, Container, Typography } from "@mui/material";
+import CtaSectionButtons from "./CtaSectionButtons";
 
 export default function CtaSection() {
   return (
@@ -28,31 +26,7 @@ export default function CtaSection() {
             Join thousands of creators who use Sketch to visualize their
             thoughts and collaborate with others.
           </Typography>
-          <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
-            <Button
-              variant="contained"
-              size="large"
-              sx={{
-                color: "white",
-                px: 4,
-                py: 1.5,
-              }}
-              component={Link}
-              href="/signup"
-            >
-              Get Started for Free
-            </Button>
-            <Button
-              variant="outlined"
-              size="large"
-              sx={{
-                px: 4,
-                py: 1.5,
-              }}
-            >
-              Learn More
-            </Button>
-          </Box>
+          <CtaSectionButtons />
         </Box>
       </Container>
     </Box>
