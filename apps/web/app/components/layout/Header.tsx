@@ -4,7 +4,10 @@ import { AppBar, Box, Button, Container, Stack, Toolbar } from "@mui/material";
 import Logo from "../common/Logo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
+import useAuthStore from "@/store/AuthStore";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import AuthLoading from "@/app/(auth)/loading";
 // const navItems = [
 //   { label: "Features", href: "#features" },
 //   { label: "Testimonials", href: "#testimonials" },
@@ -14,6 +17,13 @@ import { usePathname } from "next/navigation";
 function Header() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const router = useRouter();
+  const { isAuthenticated, signOut } = useAuthStore();
+
+  const handleLogout = () => {
+    signOut();
+    router.push("/");
+  };
 
   return (
     <AppBar
@@ -59,24 +69,61 @@ function Header() {
               </Box>
             )} */}
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Link href="/signin" style={{ textDecoration: "none" }} prefetch>
-                <Button variant="text" color="inherit" sx={{ fontWeight: 500 }}>
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup" style={{ textDecoration: "none" }} prefetch>
+              {isAuthenticated ? (
                 <Button
                   variant="contained"
+                  color="primary"
                   sx={{
+                    fontWeight: 600,
+                    backgroundColor: "primary.main",
                     color: "white",
+                    borderRadius: "8px",
+                    px: 3,
+                    py: 1,
+                    textTransform: "none",
+                    transition: "all 0.3s ease-in-out",
                     "&:hover": {
                       backgroundColor: "primary.dark",
                     },
                   }}
+                  onClick={handleLogout}
                 >
-                  Sign Up
+                  Logout
                 </Button>
-              </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/signin"
+                    style={{ textDecoration: "none" }}
+                    prefetch
+                  >
+                    <Button
+                      variant="text"
+                      color="inherit"
+                      sx={{ fontWeight: 500 }}
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link
+                    href="/signup"
+                    style={{ textDecoration: "none" }}
+                    prefetch
+                  >
+                    <Button
+                      variant="contained"
+                      sx={{
+                        color: "white",
+                        "&:hover": {
+                          backgroundColor: "primary.dark",
+                        },
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
+              )}
             </Box>
           </Stack>
         </Toolbar>
