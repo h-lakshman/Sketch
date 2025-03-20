@@ -9,6 +9,7 @@ import theme from "./theme";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Loading from "./components/common/Loading";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,26 +21,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-function Loading() {
-  return (
-    <Box
-      sx={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
-        zIndex: 9999,
-      }}
-    >
-      <CircularProgress />
-    </Box>
-  );
-}
 
 export default function RootLayout({
   children,

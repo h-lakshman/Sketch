@@ -1,20 +1,6 @@
 "use client";
-
-import { Box, CircularProgress } from "@mui/material";
+import Loading from "../components/common/Loading";
 
 export default function AuthLoading() {
-  return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "background.default",
-      }}
-    >
-      
-      <CircularProgress />
-    </Box>
-  );
+  return <Loading />;
 }
