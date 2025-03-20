@@ -24,8 +24,11 @@ api.interceptors.response.use(
 );
 
 export const getShapes = async (roomId: string) => {
-  
   const response = await api.get(`/room/${roomId}/shapes`);
   return response.data;
 };
-  
+
+export const createRoom = async (roomName: string) => {
+  const response = await api.post("/room/create-room", { name: roomName });
+  return response.data;
+};
