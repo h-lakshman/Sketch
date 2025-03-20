@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Loading from "./components/common/Loading";
+import AuthCheck from "./components/auth/AuthCheck";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,7 +21,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
 
 export default function RootLayout({
   children,
@@ -39,13 +39,15 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Suspense fallback={<Loading />}>
-              <div
-                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-              >
-                {children}
-              </div>
-            </Suspense>
+            <AuthCheck>
+              <Suspense fallback={<Loading />}>
+                <div
+                  className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                >
+                  {children}
+                </div>
+              </Suspense>
+            </AuthCheck>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
