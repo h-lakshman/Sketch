@@ -3,17 +3,13 @@ import { JWT_SECRET } from "@repo/server-common/config";
 import { IncomingMessage } from "http";
 import jwt from "jsonwebtoken";
 import { parse } from "url";
-import { prismaClient } from "@repo/db/client";
+import { prismaClient, ShapeType } from "@repo/db/client";
 
 interface User {
   id: string;
   name: string;
   ws: WebSocket;
   rooms: Set<string>;
-}
-
-enum ShapeType {
-  RECTANGLE = "RECTANGLE",
 }
 
 interface RectangleData {
@@ -23,7 +19,18 @@ interface RectangleData {
   height: number;
 }
 
-type ShapeData = RectangleData;
+interface EllipseData {
+  centerX: number;
+  centerY: number;
+  radiusX: number;
+  radiusY: number;
+}
+
+interface PenData {
+  points: { x: number; y: number }[];
+}
+
+type ShapeData = RectangleData | EllipseData | PenData;
 
 interface DrawMessage {
   type: "draw" | "notification" | "error" | "success";
@@ -200,6 +207,30 @@ class WebSocketServerSingleton {
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
               rectangle: { create: { x, y, width, height } },
+            },
+          });
+        } else if (
+          message.shapeType === ShapeType.ELLIPSE &&
+          message.shapeData
+        ) {
+          const { centerX, centerY, radiusX, radiusY } =
+            message.shapeData as EllipseData;
+          await prismaClient.shape.create({
+            data: {
+              type: ShapeType.ELLIPSE,
+              user: { connect: { id: message.user } },
+              room: { connect: { id: roomId } },
+              ellipse: { create: { centerX, centerY, radiusX, radiusY } },
+            },
+          });
+        } else if (message.shapeType === ShapeType.PEN && message.shapeData) {
+          const { points } = message.shapeData as PenData;
+          await prismaClient.shape.create({
+            data: {
+              type: ShapeType.PEN,
+              user: { connect: { id: message.user } },
+              room: { connect: { id: roomId } },
+              pen: { create: { points } },
             },
           });
         }

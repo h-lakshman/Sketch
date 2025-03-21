@@ -82,6 +82,8 @@ roomRouter.get("/:id/shapes", authMiddleware, async (req, res) => {
       take: 50,
       include: {
         rectangle: true,
+        ellipse: true,
+        pen: true,
       },
     });
 
