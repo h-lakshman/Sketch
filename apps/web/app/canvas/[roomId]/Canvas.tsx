@@ -19,13 +19,36 @@ export default function Canvas({ roomId }: { roomId: string }) {
     const fetchShapes = async () => {
       try {
         const response = await getShapes(roomId);
-        const shapes = response.shapes.map((shape: any) => ({
-          type: "RECTANGLE" as const,
-          x: shape.rectangle.x,
-          y: shape.rectangle.y,
-          width: shape.rectangle.width,
-          height: shape.rectangle.height,
-        }));
+        const shapes = response.shapes
+          .map((shape: any) => {
+            switch (shape.type) {
+              case "RECTANGLE":
+                return {
+                  type: "RECTANGLE" as const,
+                  x: shape.rectangle.x,
+                  y: shape.rectangle.y,
+                  width: shape.rectangle.width,
+                  height: shape.rectangle.height,
+                };
+              case "ELLIPSE":
+                return {
+                  type: "ELLIPSE" as const,
+                  centerX: shape.ellipse.centerX,
+                  centerY: shape.ellipse.centerY,
+                  radiusX: shape.ellipse.radiusX,
+                  radiusY: shape.ellipse.radiusY,
+                };
+              case "PEN":
+                return {
+                  type: "PEN" as const,
+                  points: shape.pen.points,
+                };
+              default:
+                console.warn("Unknown shape type:", shape.type);
+                return null;
+            }
+          })
+          .filter(Boolean);
         setInitialShapes(shapes);
       } catch (error) {
         console.error("Error fetching shapes:", error);
@@ -64,13 +87,11 @@ export default function Canvas({ roomId }: { roomId: string }) {
       console.error("WebSocket error:", error);
     };
 
-    // Register event handlers
     const unsubMessage = wsClient.onMessage(messageHandler);
     const unsubConnect = wsClient.onConnect(connectHandler);
     const unsubDisconnect = wsClient.onDisconnect(disconnectHandler);
     const unsubError = wsClient.onError(errorHandler);
 
-    // Cleanup function
     return () => {
       wsClient.leaveRoom(roomId);
       unsubMessage();
