@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 interface CollaborationModalProps {
   open: boolean;
   onClose: () => void;
-  onStartSession: (roomName: string) => Promise<void>;
+  onStartSession?: (roomName: string) => Promise<void>;
   onStopSession: () => void;
   isSessionActive: boolean;
   roomLink?: string;
@@ -59,7 +59,7 @@ export default function CollaborationModal({
     setError("");
     setIsLoading(true);
     try {
-      await onStartSession(roomName.trim());
+      if (onStartSession) await onStartSession(roomName.trim());
     } catch (error) {
       setError("Failed to create room. Please try again.");
     } finally {

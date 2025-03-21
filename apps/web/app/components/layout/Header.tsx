@@ -6,8 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useAuthStore from "@/store/AuthStore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import AuthLoading from "@/app/(auth)/loading";
 // const navItems = [
 //   { label: "Features", href: "#features" },
 //   { label: "Testimonials", href: "#testimonials" },
