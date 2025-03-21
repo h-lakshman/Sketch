@@ -31,9 +31,15 @@ interface PenData {
 }
 
 type ShapeData = RectangleData | EllipseData | PenData;
-
+enum MessageType {
+  DRAW = "draw",
+  DELETE = "delete",
+  NOTIFICATION = "notification",
+  ERROR = "error",
+  SUCCESS = "success",
+}
 interface DrawMessage {
-  type: "draw" | "notification" | "error" | "success";
+  type: MessageType;  
   user: string;
   roomId?: string;
   shapeType?: ShapeType;
@@ -111,7 +117,7 @@ class WebSocketServerSingleton {
     this.broadCastToRoom(
       user,
       {
-        type: "notification",
+        type: MessageType.NOTIFICATION,
         message: `${user.name} has joined the room`,
         timestamp: new Date().toISOString(),
         user: user.name,
@@ -125,7 +131,7 @@ class WebSocketServerSingleton {
     if (!user.rooms.has(roomId)) {
       user.ws.send(
         JSON.stringify({
-          type: "error",
+          type: MessageType.ERROR,
           message: "Not joined in this room",
           timestamp: new Date().toISOString(),
         })
@@ -144,7 +150,7 @@ class WebSocketServerSingleton {
     this.broadCastToRoom(
       user,
       {
-        type: "notification",
+        type: MessageType.NOTIFICATION,
         message: `${user.name} has left the room`,
         timestamp: new Date().toISOString(),
         user: user.name,
@@ -173,7 +179,7 @@ class WebSocketServerSingleton {
 
     const timestamp = new Date().toISOString();
     const drawMessage: DrawMessage = {
-      type: "draw",
+      type: MessageType.DRAW,
       user: user.id,
       roomId,
       shapeType,
@@ -250,6 +256,103 @@ class WebSocketServerSingleton {
     });
   }
 
+  private async deleteShape(
+    user: User,
+    roomId: string,
+    shapeType: ShapeType,
+    shapeData: ShapeData
+  ) {
+    if (!user.rooms.has(roomId)) {
+      user.ws.send(
+        JSON.stringify({
+          type: "error",
+          message: "Not authorized to delete in this room",
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return;
+    }
+
+    try {
+      let shape;
+      switch (shapeType) {
+        case ShapeType.RECTANGLE:
+          const rectData = shapeData as RectangleData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.RECTANGLE,
+              rectangle: {
+                x: rectData.x,
+                y: rectData.y,
+                width: rectData.width,
+                height: rectData.height,
+              },
+            },
+          });
+          break;
+        case ShapeType.ELLIPSE:
+          const ellipseData = shapeData as EllipseData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.ELLIPSE,
+              ellipse: {
+                centerX: ellipseData.centerX,
+                centerY: ellipseData.centerY,
+                radiusX: ellipseData.radiusX,
+                radiusY: ellipseData.radiusY,
+              },
+            },
+          });
+          break;
+        case ShapeType.PEN:
+          const penData = shapeData as PenData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.PEN,
+              pen: {
+                points: {
+                  equals: penData.points,
+                },
+              },
+            },
+          });
+          break;
+      }
+
+      if (shape) {
+        await prismaClient.shape.delete({
+          where: {
+            id: shape.id,
+          },
+        });
+
+        const timestamp = new Date().toISOString();
+        const deleteMessage: DrawMessage = {
+          type: MessageType.DELETE,
+          user: user.id,
+          roomId,
+          shapeType,
+          shapeData,
+          timestamp,
+        };
+
+        this.broadCastToRoom(user, deleteMessage, roomId);
+      }
+    } catch (error) {
+      console.error("Error deleting shape:", error);
+      user.ws.send(
+        JSON.stringify({
+          type: "error",
+          message: "Failed to delete shape",
+          timestamp: new Date().toISOString(),
+        })
+      );
+    }
+  }
+
   private setupWebSocketServer() {
     this.wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
       const decoded = this.authMiddleware(req);
@@ -284,6 +387,14 @@ class WebSocketServerSingleton {
                 parsedData.shapeData
               );
               break;
+            case "delete":
+              this.deleteShape(
+                currUser,
+                parsedData.roomId,
+                parsedData.shapeType,
+                parsedData.shapeData
+              );
+              break;
             default:
               ws.send(
                 JSON.stringify({
@@ -308,7 +419,7 @@ class WebSocketServerSingleton {
       ws.on("close", () => {
         this.users.delete(currUser.id);
         const notification: DrawMessage = {
-          type: "notification",
+          type: MessageType.NOTIFICATION,
           message: `${currUser.name} has left the room`,
           user: currUser.name,
           timestamp: new Date().toISOString(),
