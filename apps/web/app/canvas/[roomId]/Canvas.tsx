@@ -1,19 +1,19 @@
 "use client";
 import AuthLoading from "@/app/(auth)/loading";
-import { BACKEND_URL, WEBSOCKET_URL } from "@/app/config";
 import { useEffect, useRef, useState } from "react";
 import BaseCanvas, {
   BaseCanvasHandle,
 } from "@/app/components/canvas/BaseCanvas";
 import { Shape } from "@/app/components/canvas/CanvasUtils";
 import { getShapes } from "@/app/utils/api";
+import WebSocketClient from "@/app/utils/WebSocketClient";
 
 export default function Canvas({ roomId }: { roomId: string }) {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [initialShapes, setInitialShapes] = useState<Shape[]>([]);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef<BaseCanvasHandle>(null);
+  const wsClient = WebSocketClient.getInstance();
 
   useEffect(() => {
     const fetchShapes = async () => {
@@ -36,25 +36,9 @@ export default function Canvas({ roomId }: { roomId: string }) {
 
     fetchShapes();
 
-    // Setup WebSocket connection
-    const newSocket = new WebSocket(
-      WEBSOCKET_URL + `/?token=${localStorage.getItem("token")}`
-    );
+    wsClient.connect();
 
-    newSocket.onopen = () => {
-      console.log("Connected to websocket server");
-      setSocket(newSocket);
-      setIsConnected(true);
-      newSocket.send(
-        JSON.stringify({
-          type: "join",
-          roomId: roomId,
-        })
-      );
-    };
-
-    newSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    const messageHandler = (data: any) => {
       if (data.type === "draw") {
         // Add the new shape directly to canvas via ref
         if (canvasRef.current) {
@@ -67,32 +51,38 @@ export default function Canvas({ roomId }: { roomId: string }) {
       }
     };
 
-    newSocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
+    const connectHandler = () => {
+      setIsConnected(true);
+      wsClient.joinRoom(roomId);
     };
 
-    newSocket.onclose = () => {
-      console.log("Disconnected from websocket server");
+    const disconnectHandler = () => {
       setIsConnected(false);
     };
 
+    const errorHandler = (error: any) => {
+      console.error("WebSocket error:", error);
+    };
+
+    // Register event handlers
+    const unsubMessage = wsClient.onMessage(messageHandler);
+    const unsubConnect = wsClient.onConnect(connectHandler);
+    const unsubDisconnect = wsClient.onDisconnect(disconnectHandler);
+    const unsubError = wsClient.onError(errorHandler);
+
+    // Cleanup function
     return () => {
-      if (newSocket) {
-        newSocket.close();
-      }
+      wsClient.leaveRoom(roomId);
+      unsubMessage();
+      unsubConnect();
+      unsubDisconnect();
+      unsubError();
     };
   }, [roomId]);
 
   const handleDrawShape = (shape: Shape) => {
-    if (socket && isConnected) {
-      socket.send(
-        JSON.stringify({
-          type: "draw",
-          roomId,
-          shapeType: shape.type,
-          shapeData: shape,
-        })
-      );
+    if (wsClient.isConnected()) {
+      wsClient.sendDrawing(roomId, shape);
     }
   };
 
@@ -100,7 +90,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
     return <AuthLoading />;
   }
 
-  if (!socket || !isConnected) {
+  if (!isConnected) {
     return <AuthLoading />;
   }
 
