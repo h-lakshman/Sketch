@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
-import BaseCanvas from "../components/canvas/BaseCanvas";
+import { useState, useRef } from "react";
+import BaseCanvas, { BaseCanvasHandle } from "../components/canvas/BaseCanvas";
 import { Button } from "@mui/material";
 import GroupIcon from "@mui/icons-material/Group";
 import { useRouter } from "next/navigation";
 import CollaborationModal from "../components/modals/CollaborationModal";
 import { createRoom } from "../utils/api";
+import { Shape } from "../components/canvas/CanvasUtils";
 
 export default function Canvas() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function Canvas() {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [roomLink, setRoomLink] = useState<string>();
   const [roomId, setRoomId] = useState<string>();
+  const [shapes, setShapes] = useState<Shape[]>([]);
+  const canvasRef = useRef<BaseCanvasHandle>(null);
 
   const handleJoinRoom = () => {
     setIsModalOpen(true);
@@ -39,6 +42,10 @@ export default function Canvas() {
     setRoomId(undefined);
     router.push("/canvas");
     setIsModalOpen(false);
+  };
+
+  const handleDrawShape = (shape: Shape) => {
+    setShapes((prevShapes) => [...prevShapes, shape]);
   };
 
   return (
@@ -76,7 +83,11 @@ export default function Canvas() {
           Live Collaboration
         </Button>
       </div>
-      <BaseCanvas />
+      <BaseCanvas
+        ref={canvasRef}
+        initialShapes={shapes}
+        onDrawShape={handleDrawShape}
+      />
       <CollaborationModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}

@@ -6,7 +6,14 @@ import React, {
   forwardRef,
   useState,
 } from "react";
-import { Shape, ShapeType, renderShapes, drawRect } from "./CanvasUtils";
+import {
+  Shape,
+  ShapeType,
+  renderShapes,
+  drawRect,
+  drawPen,
+  drawEllipse,
+} from "./CanvasUtils";
 import ToolBar, { ToolType } from "./ToolBar";
 
 interface BaseCanvasProps {
@@ -21,15 +28,33 @@ export interface BaseCanvasHandle {
 const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
   ({ initialShapes = [], onDrawShape }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const isDrawingRef = useRef(false);
     const startXRef = useRef(0);
     const startYRef = useRef(0);
+    const penPointsRef = useRef<{ x: number; y: number }[]>([]);
     const existingShapes = useRef<Shape[]>(initialShapes);
     const [selectedTool, setSelectedTool] = useState<ToolType>("rectangle");
     const [isDarkMode, setIsDarkMode] = useState(true);
 
     const strokeColor = isDarkMode ? "#ffffff" : "#000000";
     const backgroundColor = isDarkMode ? "#1a1a1a" : "#ffffff";
+
+    const setupContext = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctxRef.current = ctx;
+      return ctx;
+    };
 
     useImperativeHandle(ref, () => ({
       addShape: (shape: Shape) => {
@@ -38,24 +63,18 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
         }
         existingShapes.current.push(shape);
 
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            renderShapes(ctx, existingShapes.current, strokeColor);
-          }
+        const ctx = ctxRef.current;
+        if (ctx) {
+          renderShapes(ctx, existingShapes.current, strokeColor);
         }
       },
     }));
 
     useEffect(() => {
       existingShapes.current = initialShapes;
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          renderShapes(ctx, existingShapes.current, strokeColor);
-        }
+      const ctx = setupContext();
+      if (ctx) {
+        renderShapes(ctx, existingShapes.current, strokeColor);
       }
     }, [initialShapes, strokeColor]);
 
@@ -65,48 +84,40 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
         console.log("canvas not found");
         return;
       }
+
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      setupContext();
     };
 
     useEffect(() => {
       resizeCanvas();
-      const canvas = canvasRef.current;
-
-      if (!canvas) {
-        console.log("canvas not found");
-        return;
-      }
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        console.log("canvas context not found");
-        return;
-      }
-
-      if (existingShapes.current.length > 0) {
+      const ctx = setupContext();
+      if (ctx && existingShapes.current.length > 0) {
         renderShapes(ctx, existingShapes.current, strokeColor);
       }
 
       const handleMouseDown = (e: MouseEvent) => {
         if (selectedTool === "hand") return;
-
         isDrawingRef.current = true;
         startXRef.current = e.clientX;
         startYRef.current = e.clientY;
+
+        if (selectedTool === "pen") {
+          penPointsRef.current = [{ x: e.clientX, y: e.clientY }];
+        }
       };
 
       const handleMouseMove = (e: MouseEvent) => {
         if (!isDrawingRef.current) return;
+        const ctx = ctxRef.current;
+        if (!ctx) return;
 
         const currentX = e.clientX;
         const currentY = e.clientY;
 
         ctx.save();
         renderShapes(ctx, existingShapes.current, strokeColor);
-
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2;
 
         switch (selectedTool) {
           case "rectangle":
@@ -132,17 +143,18 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             const radiusX = (maxX - minX) / 2;
             const radiusY = (maxY - minY) / 2;
 
-            ctx.beginPath();
-            ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-            ctx.stroke();
+            drawEllipse(ctx, centerX, centerY, radiusX, radiusY, strokeColor);
             break;
           case "pen":
-            ctx.beginPath();
-            ctx.moveTo(startXRef.current, startYRef.current);
-            ctx.lineTo(currentX, currentY);
-            ctx.stroke();
-            startXRef.current = currentX;
-            startYRef.current = currentY;
+            if (!penPointsRef.current) {
+              penPointsRef.current = [];
+              return;
+            }
+
+            // Add new point
+            penPointsRef.current.push({ x: currentX, y: currentY });
+            // Use the same drawPen function for both live drawing and final shape
+            drawPen(ctx, penPointsRef.current, strokeColor);
             break;
         }
         ctx.restore();
@@ -154,28 +166,19 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
 
         const currentX = e.clientX;
         const currentY = e.clientY;
+        const ctx = ctxRef.current;
+        if (!ctx) return;
+
+        let shape: Shape | null = null;
 
         if (selectedTool === "rectangle") {
-          const shape: Shape = {
+          shape = {
             type: ShapeType.Rectangle,
             x: startXRef.current,
             y: startYRef.current,
             width: currentX - startXRef.current,
             height: currentY - startYRef.current,
           };
-
-          if (!existingShapes.current) {
-            existingShapes.current = [];
-          }
-          existingShapes.current.push(shape);
-
-          if (onDrawShape) {
-            onDrawShape(shape);
-          }
-
-          ctx.save();
-          renderShapes(ctx, existingShapes.current, strokeColor);
-          ctx.restore();
         } else if (selectedTool === "ellipse") {
           const minX = Math.min(currentX, startXRef.current);
           const maxX = Math.max(currentX, startXRef.current);
@@ -187,28 +190,34 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
           const radiusX = (maxX - minX) / 2;
           const radiusY = (maxY - minY) / 2;
 
-          const shape: Shape = {
+          shape = {
             type: ShapeType.Ellipse,
             centerX,
             centerY,
             radiusX,
             radiusY,
           };
+        } else if (selectedTool === "pen") {
+          if (!penPointsRef.current || penPointsRef.current.length < 2) return;
 
-          if (!existingShapes.current) {
-            existingShapes.current = [];
-          }
+          shape = {
+            type: ShapeType.Pen,
+            points: [...penPointsRef.current], // Create a copy of the points
+          };
+          penPointsRef.current = []; // Clear for next stroke
+        }
+
+        if (shape) {
           existingShapes.current.push(shape);
-
           if (onDrawShape) {
             onDrawShape(shape);
           }
-
-          ctx.save();
           renderShapes(ctx, existingShapes.current, strokeColor);
-          ctx.restore();
         }
       };
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
       canvas.addEventListener("mousedown", handleMouseDown);
       canvas.addEventListener("mousemove", handleMouseMove);

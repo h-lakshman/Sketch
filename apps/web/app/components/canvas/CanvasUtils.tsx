@@ -2,7 +2,7 @@
 export enum ShapeType {
   Rectangle = "RECTANGLE",
   Ellipse = "ELLIPSE",
-  Path = "PATH",
+  Pen = "PEN",
 }
 
 export interface Rectangle {
@@ -21,12 +21,12 @@ export interface Ellipse {
   radiusY: number;
 }
 
-export interface Path {
-  type: ShapeType.Path;
+export interface Pen {
+  type: ShapeType.Pen;
   points: { x: number; y: number }[];
 }
 
-export type Shape = Rectangle | Ellipse | Path;
+export type Shape = Rectangle | Ellipse | Pen;
 
 export const drawRect = (
   ctx: CanvasRenderingContext2D,
@@ -37,7 +37,6 @@ export const drawRect = (
   strokeColor: string = "#ffffff"
 ) => {
   ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 2;
   ctx.strokeRect(x, y, width, height);
 };
 
@@ -50,13 +49,12 @@ export const drawEllipse = (
   strokeColor: string = "#ffffff"
 ) => {
   ctx.beginPath();
-  ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
   ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 2;
+  ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
   ctx.stroke();
 };
 
-export const drawPath = (
+export const drawPen = (
   ctx: CanvasRenderingContext2D,
   points: { x: number; y: number }[],
   strokeColor: string = "#ffffff"
@@ -64,14 +62,11 @@ export const drawPath = (
   if (points.length < 2) return;
 
   ctx.beginPath();
+  ctx.strokeStyle = strokeColor;
   ctx.moveTo(points[0].x, points[0].y);
-
   for (let i = 1; i < points.length; i++) {
     ctx.lineTo(points[i].x, points[i].y);
   }
-
-  ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 2;
   ctx.stroke();
 };
 
@@ -102,8 +97,8 @@ export const renderShapes = (
           strokeColor
         );
         break;
-      case ShapeType.Path:
-        drawPath(ctx, shape.points, strokeColor);
+      case ShapeType.Pen:
+        drawPen(ctx, shape.points, strokeColor);
         break;
     }
   });
