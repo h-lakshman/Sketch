@@ -8,8 +8,21 @@ import PanToolIcon from "@mui/icons-material/PanTool";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
+import TimelineIcon from "@mui/icons-material/Timeline";
+import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
+import DiamondIcon from "@mui/icons-material/Diamond";
+import TextFieldsIcon from "@mui/icons-material/TextFields";
 
-export type ToolType = "rectangle" | "ellipse" | "pen" | "eraser" | "hand";
+export type ToolType =
+  | "rectangle"
+  | "ellipse"
+  | "pen"
+  | "eraser"
+  | "hand"
+  | "line"
+  | "lineWithArrow"
+  | "diamond"
+  | "text";
 
 interface ToolBarProps {
   selectedTool: ToolType;
@@ -104,6 +117,26 @@ const tools = [
     type: "pen" as ToolType,
     icon: <CreateIcon />,
     tooltip: "Pen Tool (P)",
+  },
+  {
+    type: "line" as ToolType,
+    icon: <TimelineIcon />,
+    tooltip: "Line Tool (L)",
+  },
+  {
+    type: "lineWithArrow" as ToolType,
+    icon: <ArrowRightAltIcon />,
+    tooltip: "Line with Arrow Tool (A)",
+  },
+  {
+    type: "diamond" as ToolType,
+    icon: <DiamondIcon />,
+    tooltip: "Diamond Tool (D)",
+  },
+  {
+    type: "text" as ToolType,
+    icon: <TextFieldsIcon />,
+    tooltip: "Text Tool (T)",
   },
   {
     type: "eraser" as ToolType,
