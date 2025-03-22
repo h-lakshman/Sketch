@@ -101,6 +101,15 @@ export default class WebSocketClient {
     });
   }
 
+  public deleteShape(roomId: string, shape: Shape): void {
+    this.sendMessage({
+      type: "delete",
+      roomId,
+      shapeType: shape.type,
+      shapeData: shape,
+    });
+  }
+
   private sendMessage(message: WebSocketMessage): void {
     if (this.isConnected()) {
       this.socket!.send(JSON.stringify(message));

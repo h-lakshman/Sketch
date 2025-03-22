@@ -67,6 +67,10 @@ export default function Canvas({ roomId }: { roomId: string }) {
         if (canvasRef.current) {
           canvasRef.current.addShape(data.shapeData);
         }
+      } else if (data.type === "delete") {
+        if (canvasRef.current) {
+          canvasRef.current.removeShape(data.shapeData);
+        }
       } else if (data.type === "success") {
         console.log("Success:", data.message);
       } else if (data.type === "error") {
@@ -107,6 +111,12 @@ export default function Canvas({ roomId }: { roomId: string }) {
     }
   };
 
+  const handleDeleteShape = (shape: Shape) => {
+    if (wsClient.isConnected()) {
+      wsClient.deleteShape(roomId, shape);
+    }
+  };
+
   if (loading) {
     return <AuthLoading />;
   }
@@ -121,6 +131,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
         ref={canvasRef}
         initialShapes={initialShapes}
         onDrawShape={handleDrawShape}
+        onDeleteShape={handleDeleteShape}
       />
     </div>
   );
