@@ -11,6 +11,10 @@ enum ShapeType {
   RECTANGLE
   ELLIPSE
   PEN
+  LINE
+  LINE_WITH_ARROW
+  DIAMOND
+  TEXT
 }
 
 model User {
@@ -41,11 +45,15 @@ model Shape {
   roomId    String
   createdAt DateTime  @default(now())
 
-  user      User       @relation(fields: [userId], references: [id])
-  room      Room       @relation(fields: [roomId], references: [id])
-  rectangle Rectangle?
-  ellipse   Ellipse?
-  pen       Pen?
+  user          User           @relation(fields: [userId], references: [id])
+  room          Room           @relation(fields: [roomId], references: [id])
+  rectangle     Rectangle?
+  ellipse       Ellipse?
+  pen           Pen?
+  line          Line?
+  lineWithArrow LineWithArrow?
+  diamond       Diamond?
+  text          Text?
 }
 
 model Rectangle {
@@ -73,4 +81,44 @@ model Pen {
   shapeId Int   @unique
   shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   points  Json
+}
+
+model Line {
+  id      Int   @id @default(autoincrement())
+  shapeId Int   @unique
+  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  startX  Float
+  startY  Float
+  endX    Float
+  endY    Float
+}
+
+model LineWithArrow {
+  id      Int   @id @default(autoincrement())
+  shapeId Int   @unique
+  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  startX  Float
+  startY  Float
+  endX    Float
+  endY    Float
+}
+
+model Diamond {
+  id      Int   @id @default(autoincrement())
+  shapeId Int   @unique
+  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  centerX Float
+  centerY Float
+  width   Float
+  height  Float
+}
+
+model Text {
+  id       Int    @id @default(autoincrement())
+  shapeId  Int    @unique
+  shape    Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  x        Float
+  y        Float
+  content  String
+  fontSize Float  @default(16)
 }
