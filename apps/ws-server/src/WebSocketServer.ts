@@ -30,7 +30,37 @@ interface PenData {
   points: { x: number; y: number }[];
 }
 
-type ShapeData = RectangleData | EllipseData | PenData;
+interface LineData {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+interface LineWithArrowData extends LineData {}
+
+interface DiamondData {
+  centerX: number;
+  centerY: number;
+  width: number;
+  height: number;
+}
+
+interface TextData {
+  x: number;
+  y: number;
+  content: string;
+  fontSize: number;
+}
+
+type ShapeData =
+  | RectangleData
+  | EllipseData
+  | PenData
+  | LineData
+  | LineWithArrowData
+  | DiamondData
+  | TextData;
 enum MessageType {
   DRAW = "draw",
   DELETE = "delete",
@@ -39,7 +69,7 @@ enum MessageType {
   SUCCESS = "success",
 }
 interface DrawMessage {
-  type: MessageType;  
+  type: MessageType;
   user: string;
   roomId?: string;
   shapeType?: ShapeType;
@@ -237,6 +267,54 @@ class WebSocketServerSingleton {
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
               pen: { create: { points } },
+            },
+          });
+        } else if (message.shapeType === ShapeType.LINE && message.shapeData) {
+          const { startX, startY, endX, endY } = message.shapeData as LineData;
+          await prismaClient.shape.create({
+            data: {
+              type: ShapeType.LINE,
+              user: { connect: { id: message.user } },
+              room: { connect: { id: roomId } },
+              line: { create: { startX, startY, endX, endY } },
+            },
+          });
+        } else if (
+          message.shapeType === ShapeType.LINE_WITH_ARROW &&
+          message.shapeData
+        ) {
+          const { startX, startY, endX, endY } =
+            message.shapeData as LineWithArrowData;
+          await prismaClient.shape.create({
+            data: {
+              type: ShapeType.LINE_WITH_ARROW,
+              user: { connect: { id: message.user } },
+              room: { connect: { id: roomId } },
+              lineWithArrow: { create: { startX, startY, endX, endY } },
+            },
+          });
+        } else if (
+          message.shapeType === ShapeType.DIAMOND &&
+          message.shapeData
+        ) {
+          const { centerX, centerY, width, height } =
+            message.shapeData as DiamondData;
+          await prismaClient.shape.create({
+            data: {
+              type: ShapeType.DIAMOND,
+              user: { connect: { id: message.user } },
+              room: { connect: { id: roomId } },
+              diamond: { create: { centerX, centerY, width, height } },
+            },
+          });
+        } else if (message.shapeType === ShapeType.TEXT && message.shapeData) {
+          const { x, y, content, fontSize } = message.shapeData as TextData;
+          await prismaClient.shape.create({
+            data: {
+              type: ShapeType.TEXT,
+              user: { connect: { id: message.user } },
+              room: { connect: { id: roomId } },
+              text: { create: { x, y, content, fontSize } },
             },
           });
         }
