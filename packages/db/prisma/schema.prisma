@@ -57,60 +57,66 @@ model Shape {
 }
 
 model Rectangle {
-  id      Int   @id @default(autoincrement())
-  shapeId Int   @unique
-  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  id      Int    @id @default(autoincrement())
+  shapeId Int    @unique
+  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   x       Float
   y       Float
   width   Float
   height  Float
+  color   String @default("#ffffff")
 }
 
 model Ellipse {
-  id      Int   @id @default(autoincrement())
-  shapeId Int   @unique
-  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  id      Int    @id @default(autoincrement())
+  shapeId Int    @unique
+  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   centerX Float
   centerY Float
   radiusX Float
   radiusY Float
+  color   String @default("#ffffff")
 }
 
 model Pen {
-  id      Int   @id @default(autoincrement())
-  shapeId Int   @unique
-  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  id      Int    @id @default(autoincrement())
+  shapeId Int    @unique
+  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   points  Json
+  color   String @default("#ffffff")
 }
 
 model Line {
-  id      Int   @id @default(autoincrement())
-  shapeId Int   @unique
-  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  id      Int    @id @default(autoincrement())
+  shapeId Int    @unique
+  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   startX  Float
   startY  Float
   endX    Float
   endY    Float
+  color   String @default("#ffffff")
 }
 
 model LineWithArrow {
-  id      Int   @id @default(autoincrement())
-  shapeId Int   @unique
-  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  id      Int    @id @default(autoincrement())
+  shapeId Int    @unique
+  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   startX  Float
   startY  Float
   endX    Float
   endY    Float
+  color   String @default("#ffffff")
 }
 
 model Diamond {
-  id      Int   @id @default(autoincrement())
-  shapeId Int   @unique
-  shape   Shape @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  id      Int    @id @default(autoincrement())
+  shapeId Int    @unique
+  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
   centerX Float
   centerY Float
   width   Float
   height  Float
+  color   String @default("#ffffff")
 }
 
 model Text {
@@ -121,4 +127,5 @@ model Text {
   y        Float
   content  String
   fontSize Float  @default(16)
+  color    String @default("#ffffff")
 }
