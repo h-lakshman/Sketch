@@ -3,10 +3,8 @@
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { Box, CircularProgress } from "@mui/material";
 import { Suspense } from "react";
 import theme from "./theme";
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Loading from "./components/common/Loading";

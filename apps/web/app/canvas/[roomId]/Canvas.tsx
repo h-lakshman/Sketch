@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import BaseCanvas, {
   BaseCanvasHandle,
 } from "@/app/components/canvas/BaseCanvas";
-import { Shape } from "@/app/components/canvas/CanvasUtils";
+import { Shape, ShapeType } from "@/app/components/canvas/CanvasUtils";
 import { getShapes } from "@/app/utils/api";
 import WebSocketClient from "@/app/utils/WebSocketClient";
 
@@ -21,27 +21,74 @@ export default function Canvas({ roomId }: { roomId: string }) {
         const response = await getShapes(roomId);
         const shapes = response.shapes
           .map((shape: any) => {
+            let color;
             switch (shape.type) {
               case "RECTANGLE":
+                color = shape.rectangle.color;
                 return {
                   type: "RECTANGLE" as const,
                   x: shape.rectangle.x,
                   y: shape.rectangle.y,
                   width: shape.rectangle.width,
                   height: shape.rectangle.height,
+                  color,
                 };
               case "ELLIPSE":
+                color = shape.ellipse.color;
                 return {
                   type: "ELLIPSE" as const,
                   centerX: shape.ellipse.centerX,
                   centerY: shape.ellipse.centerY,
                   radiusX: shape.ellipse.radiusX,
                   radiusY: shape.ellipse.radiusY,
+                  color,
                 };
               case "PEN":
+                color = shape.pen.color;
                 return {
                   type: "PEN" as const,
                   points: shape.pen.points,
+                  color,
+                };
+              case "LINE":
+                color = shape.line.color;
+                return {
+                  type: "LINE" as const,
+                  startX: shape.line.startX,
+                  startY: shape.line.startY,
+                  endX: shape.line.endX,
+                  endY: shape.line.endY,
+                  color,
+                };
+              case "LINE_WITH_ARROW":
+                color = shape.lineWithArrow.color;
+                return {
+                  type: "LINE_WITH_ARROW" as const,
+                  startX: shape.lineWithArrow.startX,
+                  startY: shape.lineWithArrow.startY,
+                  endX: shape.lineWithArrow.endX,
+                  endY: shape.lineWithArrow.endY,
+                  color,
+                };
+              case "DIAMOND":
+                color = shape.diamond.color;
+                return {
+                  type: "DIAMOND" as const,
+                  centerX: shape.diamond.centerX,
+                  centerY: shape.diamond.centerY,
+                  width: shape.diamond.width,
+                  height: shape.diamond.height,
+                  color,
+                };
+              case "TEXT":
+                color = shape.text.color;
+                return {
+                  type: "TEXT" as const,
+                  x: shape.text.x,
+                  y: shape.text.y,
+                  content: shape.text.content,
+                  fontSize: shape.text.fontSize,
+                  color,
                 };
               default:
                 console.warn("Unknown shape type:", shape.type);
@@ -62,14 +109,168 @@ export default function Canvas({ roomId }: { roomId: string }) {
     wsClient.connect();
 
     const messageHandler = (data: any) => {
+      console.log("WebSocket message received:", data);
+
       if (data.type === "draw") {
         // Add the new shape directly to canvas via ref
         if (canvasRef.current) {
-          canvasRef.current.addShape(data.shapeData);
+          let shapeObj: Shape | null = null;
+
+          if (data.shapeData) {
+            switch (data.shapeType) {
+              case "RECTANGLE":
+                shapeObj = {
+                  type: ShapeType.Rectangle,
+                  x: data.shapeData.x,
+                  y: data.shapeData.y,
+                  width: data.shapeData.width,
+                  height: data.shapeData.height,
+                  color: data.color || "#ffffff",
+                };
+                break;
+              case "ELLIPSE":
+                shapeObj = {
+                  type: ShapeType.Ellipse,
+                  centerX: data.shapeData.centerX,
+                  centerY: data.shapeData.centerY,
+                  radiusX: data.shapeData.radiusX,
+                  radiusY: data.shapeData.radiusY,
+                  color: data.color || "#ffffff",
+                };
+                break;
+              case "PEN":
+                shapeObj = {
+                  type: ShapeType.Pen,
+                  points: data.shapeData.points,
+                  color: data.color || "#ffffff",
+                };
+                break;
+              case "LINE":
+                shapeObj = {
+                  type: ShapeType.Line,
+                  startX: data.shapeData.startX,
+                  startY: data.shapeData.startY,
+                  endX: data.shapeData.endX,
+                  endY: data.shapeData.endY,
+                  color: data.color || "#ffffff",
+                };
+                break;
+              case "LINE_WITH_ARROW":
+                shapeObj = {
+                  type: ShapeType.LineWithArrow,
+                  startX: data.shapeData.startX,
+                  startY: data.shapeData.startY,
+                  endX: data.shapeData.endX,
+                  endY: data.shapeData.endY,
+                  color: data.color || "#ffffff",
+                };
+                break;
+              case "DIAMOND":
+                shapeObj = {
+                  type: ShapeType.Diamond,
+                  centerX: data.shapeData.centerX,
+                  centerY: data.shapeData.centerY,
+                  width: data.shapeData.width,
+                  height: data.shapeData.height,
+                  color: data.color || "#ffffff",
+                };
+                break;
+              case "TEXT":
+                shapeObj = {
+                  type: ShapeType.Text,
+                  x: data.shapeData.x,
+                  y: data.shapeData.y,
+                  content: data.shapeData.content,
+                  fontSize: data.shapeData.fontSize,
+                  color: data.color || "#ffffff",
+                };
+                break;
+            }
+          }
+
+          if (shapeObj) {
+            console.log("Adding shape to canvas:", shapeObj);
+            canvasRef.current.addShape(shapeObj);
+          }
         }
       } else if (data.type === "delete") {
-        if (canvasRef.current) {
-          canvasRef.current.removeShape(data.shapeData);
+        if (canvasRef.current && data.shapeData) {
+          let shapeObj: Shape | null = null;
+
+          switch (data.shapeType) {
+            case "RECTANGLE":
+              shapeObj = {
+                type: ShapeType.Rectangle,
+                x: data.shapeData.x,
+                y: data.shapeData.y,
+                width: data.shapeData.width,
+                height: data.shapeData.height,
+                color: data.color || "#ffffff",
+              };
+              break;
+            case "ELLIPSE":
+              shapeObj = {
+                type: ShapeType.Ellipse,
+                centerX: data.shapeData.centerX,
+                centerY: data.shapeData.centerY,
+                radiusX: data.shapeData.radiusX,
+                radiusY: data.shapeData.radiusY,
+                color: data.color || "#ffffff",
+              };
+              break;
+            case "PEN":
+              shapeObj = {
+                type: ShapeType.Pen,
+                points: data.shapeData.points,
+                color: data.color || "#ffffff",
+              };
+              break;
+            case "LINE":
+              shapeObj = {
+                type: ShapeType.Line,
+                startX: data.shapeData.startX,
+                startY: data.shapeData.startY,
+                endX: data.shapeData.endX,
+                endY: data.shapeData.endY,
+                color: data.color || "#ffffff",
+              };
+              break;
+            case "LINE_WITH_ARROW":
+              shapeObj = {
+                type: ShapeType.LineWithArrow,
+                startX: data.shapeData.startX,
+                startY: data.shapeData.startY,
+                endX: data.shapeData.endX,
+                endY: data.shapeData.endY,
+                color: data.color || "#ffffff",
+              };
+              break;
+            case "DIAMOND":
+              shapeObj = {
+                type: ShapeType.Diamond,
+                centerX: data.shapeData.centerX,
+                centerY: data.shapeData.centerY,
+                width: data.shapeData.width,
+                height: data.shapeData.height,
+                color: data.color || "#ffffff",
+              };
+              break;
+            case "TEXT":
+              shapeObj = {
+                type: ShapeType.Text,
+                x: data.shapeData.x,
+                y: data.shapeData.y,
+                content: data.shapeData.content,
+                fontSize: data.shapeData.fontSize,
+                color: data.color || "#ffffff",
+              };
+              break;
+          }
+
+          if (shapeObj) {
+            console.log("Removing shape from canvas:", shapeObj);
+            canvasRef.current.removeShape(shapeObj);
+          }
         }
       } else if (data.type === "success") {
         console.log("Success:", data.message);

@@ -1,15 +1,47 @@
 import { WEBSOCKET_URL } from "@/app/config";
-import { Shape } from "@/app/components/canvas/CanvasUtils";
+import {
+  Shape,
+  ShapeType,
+  Rectangle,
+  Ellipse,
+  Pen,
+  Line,
+  LineWithArrow,
+  Diamond,
+  Text,
+} from "@/app/components/canvas/CanvasUtils";
 
 type MessageHandler = (data: any) => void;
 type ErrorHandler = (error: any) => void;
 type ConnectionHandler = () => void;
 
+interface ShapePayload {
+  type: ShapeType;
+  color: string;
+  data: {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    centerX?: number;
+    centerY?: number;
+    radiusX?: number;
+    radiusY?: number;
+    points?: { x: number; y: number }[];
+    startX?: number;
+    startY?: number;
+    endX?: number;
+    endY?: number;
+    content?: string;
+    fontSize?: number;
+  };
+}
+
 interface WebSocketMessage {
   type: string;
   roomId?: string;
-  shapeType?: string;
-  shapeData?: Shape;
+  shapeType?: ShapeType;
+  shapeData?: ShapePayload;
 }
 
 export default class WebSocketClient {
@@ -93,20 +125,150 @@ export default class WebSocketClient {
   }
 
   public sendDrawing(roomId: string, shape: Shape): void {
+    // Format shape data to match server's expected structure
+    const shapeData = {
+      type: shape.type,
+      color: shape.color || "#000000",
+      data: (() => {
+        switch (shape.type) {
+          case ShapeType.Rectangle:
+            const rect = shape as Rectangle;
+            return {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+            };
+          case ShapeType.Ellipse:
+            const ellipse = shape as Ellipse;
+            return {
+              centerX: ellipse.centerX,
+              centerY: ellipse.centerY,
+              radiusX: ellipse.radiusX,
+              radiusY: ellipse.radiusY,
+            };
+          case ShapeType.Pen:
+            const pen = shape as Pen;
+            return {
+              points: pen.points,
+            };
+          case ShapeType.Line:
+            const line = shape as Line;
+            return {
+              startX: line.startX,
+              startY: line.startY,
+              endX: line.endX,
+              endY: line.endY,
+            };
+          case ShapeType.LineWithArrow:
+            const arrow = shape as LineWithArrow;
+            return {
+              startX: arrow.startX,
+              startY: arrow.startY,
+              endX: arrow.endX,
+              endY: arrow.endY,
+            };
+          case ShapeType.Diamond:
+            const diamond = shape as Diamond;
+            return {
+              centerX: diamond.centerX,
+              centerY: diamond.centerY,
+              width: diamond.width,
+              height: diamond.height,
+            };
+          case ShapeType.Text:
+            const text = shape as Text;
+            return {
+              x: text.x,
+              y: text.y,
+              content: text.content,
+              fontSize: text.fontSize,
+            };
+          default:
+            return {};
+        }
+      })(),
+    };
+
     this.sendMessage({
       type: "draw",
       roomId,
       shapeType: shape.type,
-      shapeData: shape,
+      shapeData,
     });
   }
 
   public deleteShape(roomId: string, shape: Shape): void {
+    // Format shape data to match server's expected structure
+    const shapeData = {
+      type: shape.type,
+      color: shape.color || "#000000",
+      data: (() => {
+        switch (shape.type) {
+          case ShapeType.Rectangle:
+            const rect = shape as Rectangle;
+            return {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+            };
+          case ShapeType.Ellipse:
+            const ellipse = shape as Ellipse;
+            return {
+              centerX: ellipse.centerX,
+              centerY: ellipse.centerY,
+              radiusX: ellipse.radiusX,
+              radiusY: ellipse.radiusY,
+            };
+          case ShapeType.Pen:
+            const pen = shape as Pen;
+            return {
+              points: pen.points,
+            };
+          case ShapeType.Line:
+            const line = shape as Line;
+            return {
+              startX: line.startX,
+              startY: line.startY,
+              endX: line.endX,
+              endY: line.endY,
+            };
+          case ShapeType.LineWithArrow:
+            const arrow = shape as LineWithArrow;
+            return {
+              startX: arrow.startX,
+              startY: arrow.startY,
+              endX: arrow.endX,
+              endY: arrow.endY,
+            };
+          case ShapeType.Diamond:
+            const diamond = shape as Diamond;
+            return {
+              centerX: diamond.centerX,
+              centerY: diamond.centerY,
+              width: diamond.width,
+              height: diamond.height,
+            };
+          case ShapeType.Text:
+            const text = shape as Text;
+            return {
+              x: text.x,
+              y: text.y,
+              content: text.content,
+              fontSize: text.fontSize,
+            };
+          default:
+            return {};
+        }
+      })(),
+    };
+
     this.sendMessage({
       type: "delete",
       roomId,
       shapeType: shape.type,
-      shapeData: shape,
+      shapeData,
     });
   }
 

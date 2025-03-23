@@ -9,7 +9,11 @@ export enum ShapeType {
   Text = "TEXT",
 }
 
-export interface Rectangle {
+interface BaseShape {
+  color: string;
+}
+
+export interface Rectangle extends BaseShape {
   type: ShapeType.Rectangle;
   x: number;
   y: number;
@@ -17,7 +21,7 @@ export interface Rectangle {
   height: number;
 }
 
-export interface Ellipse {
+export interface Ellipse extends BaseShape {
   type: ShapeType.Ellipse;
   centerX: number;
   centerY: number;
@@ -25,12 +29,12 @@ export interface Ellipse {
   radiusY: number;
 }
 
-export interface Pen {
+export interface Pen extends BaseShape {
   type: ShapeType.Pen;
   points: { x: number; y: number }[];
 }
 
-export interface Line {
+export interface Line extends BaseShape {
   type: ShapeType.Line;
   startX: number;
   startY: number;
@@ -38,7 +42,7 @@ export interface Line {
   endY: number;
 }
 
-export interface LineWithArrow {
+export interface LineWithArrow extends BaseShape {
   type: ShapeType.LineWithArrow;
   startX: number;
   startY: number;
@@ -46,7 +50,7 @@ export interface LineWithArrow {
   endY: number;
 }
 
-export interface Diamond {
+export interface Diamond extends BaseShape {
   type: ShapeType.Diamond;
   centerX: number;
   centerY: number;
@@ -54,7 +58,7 @@ export interface Diamond {
   height: number;
 }
 
-export interface Text {
+export interface Text extends BaseShape {
   type: ShapeType.Text;
   x: number;
   y: number;
@@ -201,15 +205,16 @@ export const drawText = (
 export const renderShapes = (
   ctx: CanvasRenderingContext2D,
   shapes: Shape[],
-  strokeColor: string = "#ffffff"
+  defaultColor: string = "#ffffff"
 ) => {
   clearCanvas(ctx);
   if (!shapes) return;
 
   shapes.forEach((shape) => {
+    const shapeColor = shape.color || defaultColor;
     switch (shape.type) {
       case ShapeType.Rectangle:
-        drawRect(ctx, shape.x, shape.y, shape.width, shape.height, strokeColor);
+        drawRect(ctx, shape.x, shape.y, shape.width, shape.height, shapeColor);
         break;
       case ShapeType.Ellipse:
         drawEllipse(
@@ -218,11 +223,11 @@ export const renderShapes = (
           shape.centerY,
           shape.radiusX,
           shape.radiusY,
-          strokeColor
+          shapeColor
         );
         break;
       case ShapeType.Pen:
-        drawPen(ctx, shape.points, strokeColor);
+        drawPen(ctx, shape.points, shapeColor);
         break;
       case ShapeType.Line:
         drawLine(
@@ -231,7 +236,7 @@ export const renderShapes = (
           shape.startY,
           shape.endX,
           shape.endY,
-          strokeColor
+          shapeColor
         );
         break;
       case ShapeType.LineWithArrow:
@@ -241,7 +246,7 @@ export const renderShapes = (
           shape.startY,
           shape.endX,
           shape.endY,
-          strokeColor
+          shapeColor
         );
         break;
       case ShapeType.Diamond:
@@ -251,7 +256,7 @@ export const renderShapes = (
           shape.centerY,
           shape.width,
           shape.height,
-          strokeColor
+          shapeColor
         );
         break;
       case ShapeType.Text:
@@ -261,7 +266,7 @@ export const renderShapes = (
           shape.y,
           shape.content,
           shape.fontSize,
-          strokeColor
+          shapeColor
         );
         break;
     }
