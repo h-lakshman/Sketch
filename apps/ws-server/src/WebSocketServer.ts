@@ -74,6 +74,7 @@ interface DrawMessage {
   roomId?: string;
   shapeType?: ShapeType;
   shapeData?: ShapeData;
+  color?: string;
   message?: string;
   timestamp: string;
 }
@@ -194,7 +195,8 @@ class WebSocketServerSingleton {
     user: User,
     roomId: string,
     shapeType: ShapeType,
-    shapeData: ShapeData
+    shapeData: ShapeData,
+    color: string = "#ffffff"
   ) {
     if (!user.rooms.has(roomId)) {
       user.ws.send(
@@ -214,6 +216,7 @@ class WebSocketServerSingleton {
       roomId,
       shapeType,
       shapeData,
+      color,
       timestamp,
     };
 
@@ -228,6 +231,7 @@ class WebSocketServerSingleton {
 
   private async processQueue(roomId: string) {
     const messages = this.queuedMessages.get(roomId);
+
     if (!messages || messages.length === 0) return;
 
     while (messages.length > 0) {
@@ -242,7 +246,15 @@ class WebSocketServerSingleton {
               type: ShapeType.RECTANGLE,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              rectangle: { create: { x, y, width, height } },
+              rectangle: {
+                create: {
+                  x,
+                  y,
+                  width,
+                  height,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         } else if (
@@ -256,7 +268,15 @@ class WebSocketServerSingleton {
               type: ShapeType.ELLIPSE,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              ellipse: { create: { centerX, centerY, radiusX, radiusY } },
+              ellipse: {
+                create: {
+                  centerX,
+                  centerY,
+                  radiusX,
+                  radiusY,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         } else if (message.shapeType === ShapeType.PEN && message.shapeData) {
@@ -266,7 +286,12 @@ class WebSocketServerSingleton {
               type: ShapeType.PEN,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              pen: { create: { points } },
+              pen: {
+                create: {
+                  points,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         } else if (message.shapeType === ShapeType.LINE && message.shapeData) {
@@ -276,7 +301,15 @@ class WebSocketServerSingleton {
               type: ShapeType.LINE,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              line: { create: { startX, startY, endX, endY } },
+              line: {
+                create: {
+                  startX,
+                  startY,
+                  endX,
+                  endY,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         } else if (
@@ -290,7 +323,15 @@ class WebSocketServerSingleton {
               type: ShapeType.LINE_WITH_ARROW,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              lineWithArrow: { create: { startX, startY, endX, endY } },
+              lineWithArrow: {
+                create: {
+                  startX,
+                  startY,
+                  endX,
+                  endY,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         } else if (
@@ -304,7 +345,15 @@ class WebSocketServerSingleton {
               type: ShapeType.DIAMOND,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              diamond: { create: { centerX, centerY, width, height } },
+              diamond: {
+                create: {
+                  centerX,
+                  centerY,
+                  width,
+                  height,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         } else if (message.shapeType === ShapeType.TEXT && message.shapeData) {
@@ -314,12 +363,20 @@ class WebSocketServerSingleton {
               type: ShapeType.TEXT,
               user: { connect: { id: message.user } },
               room: { connect: { id: roomId } },
-              text: { create: { x, y, content, fontSize } },
+              text: {
+                create: {
+                  x,
+                  y,
+                  content,
+                  fontSize,
+                  color: message.color || "#ffffff",
+                },
+              },
             },
           });
         }
       } catch (error) {
-        console.error("Error storing shape data:", error);
+        console.error("[DEBUG] Error processing message:", error);
         this.queuedMessages.set(roomId, [...messages, message]);
         break;
       }
@@ -327,9 +384,12 @@ class WebSocketServerSingleton {
   }
 
   private broadCastToRoom(user: User, message: DrawMessage, roomId: string) {
+    // For draw messages, ensure the shape data has the right format
+    const broadcastMessage = { ...message };
+
     this.users.forEach((u) => {
       if (u.rooms.has(roomId) && u.ws !== user.ws) {
-        u.ws.send(JSON.stringify(message));
+        u.ws.send(JSON.stringify(broadcastMessage));
       }
     });
   }
@@ -450,6 +510,7 @@ class WebSocketServerSingleton {
       ws.on("message", (data: WebSocket.Data) => {
         try {
           const parsedData = JSON.parse(data.toString());
+
           switch (parsedData.type) {
             case "join":
               this.joinRoom(currUser, parsedData.roomId);
@@ -458,11 +519,16 @@ class WebSocketServerSingleton {
               this.leaveRoom(currUser, parsedData.roomId);
               break;
             case "draw":
+              // Extract the color and data correctly from the client message
+              const shapeData = parsedData.shapeData?.data;
+              const color = parsedData.shapeData?.color || "#ffffff";
+
               this.handleDraw(
                 currUser,
                 parsedData.roomId,
                 parsedData.shapeType,
-                parsedData.shapeData
+                shapeData,
+                color
               );
               break;
             case "delete":
