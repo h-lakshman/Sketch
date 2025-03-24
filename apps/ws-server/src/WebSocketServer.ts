@@ -521,6 +521,65 @@ class WebSocketServerSingleton {
             },
           });
           break;
+        case ShapeType.LINE:
+          const lineData = shapeData as LineData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.LINE,
+              line: {
+                startX: lineData.startX,
+                startY: lineData.startY,
+                endX: lineData.endX,
+                endY: lineData.endY,
+              },
+            },
+          });
+          break;
+        case ShapeType.LINE_WITH_ARROW:
+          const arrowData = shapeData as LineWithArrowData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.LINE_WITH_ARROW,
+              lineWithArrow: {
+                startX: arrowData.startX,
+                startY: arrowData.startY,
+                endX: arrowData.endX,
+                endY: arrowData.endY,
+              },
+            },
+          });
+          break;
+        case ShapeType.DIAMOND:
+          const diamondData = shapeData as DiamondData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.DIAMOND,
+              diamond: {
+                centerX: diamondData.centerX,
+                centerY: diamondData.centerY,
+                width: diamondData.width,
+                height: diamondData.height,
+              },
+            },
+          });
+          break;
+        case ShapeType.TEXT:
+          const textData = shapeData as TextData;
+          shape = await prismaClient.shape.findFirst({
+            where: {
+              roomId,
+              type: ShapeType.TEXT,
+              text: {
+                x: textData.x,
+                y: textData.y,
+                content: textData.content,
+              },
+            },
+          });
+          break;
       }
 
       if (shape) {
