@@ -90,10 +90,12 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
 
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       existingShapes.current.forEach((shape) => {
-        // If shape is being previewed for deletion, use highlight color
+        // If shape is being previewed for deletion or is marked for deletion, use highlight color
         const isPreview =
-          previewShapeRef.current &&
-          areShapesEqual(shape, previewShapeRef.current);
+          shapesToDelete.current.has(shape) ||
+          (previewShapeRef.current &&
+            areShapesEqual(shape, previewShapeRef.current));
+
         switch (shape.type) {
           case ShapeType.Rectangle:
             drawRect(
@@ -102,7 +104,7 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.y,
               shape.width,
               shape.height,
-              shape.color,
+              isPreview ? highlightColor : shape.color,
               shape.strokeWidth,
               shape.strokeStyle
             );
@@ -114,7 +116,7 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.centerY,
               shape.radiusX,
               shape.radiusY,
-              shape.color,
+              isPreview ? highlightColor : shape.color,
               shape.strokeWidth,
               shape.strokeStyle
             );
@@ -123,7 +125,7 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             drawPen(
               ctx,
               shape.points,
-              shape.color,
+              isPreview ? highlightColor : shape.color,
               shape.strokeWidth,
               shape.strokeStyle
             );
@@ -135,7 +137,7 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.startY,
               shape.endX,
               shape.endY,
-              shape.color,
+              isPreview ? highlightColor : shape.color,
               shape.strokeWidth,
               shape.strokeStyle
             );
@@ -147,7 +149,7 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.startY,
               shape.endX,
               shape.endY,
-              shape.color,
+              isPreview ? highlightColor : shape.color,
               shape.strokeWidth,
               shape.strokeStyle
             );
@@ -159,14 +161,14 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.centerY,
               shape.width,
               shape.height,
-              shape.color,
+              isPreview ? highlightColor : shape.color,
               shape.strokeWidth,
               shape.strokeStyle
             );
             break;
           case ShapeType.Text:
             ctx.font = `${shape.fontSize}px Arial`;
-            ctx.fillStyle = shape.color;
+            ctx.fillStyle = isPreview ? highlightColor : shape.color;
             ctx.fillText(shape.content, shape.x, shape.y);
             break;
         }
@@ -225,14 +227,12 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
       const y = e.clientY - rect.top;
 
       if (selectedTool === "eraser") {
+        isDrawingRef.current = true;
+        shapesToDelete.current = new Set();
         const shapeToDelete = findShapeAtPoint(existingShapes.current, x, y);
         if (shapeToDelete) {
           shapesToDelete.current.add(shapeToDelete);
-          onDeleteShape?.(shapeToDelete);
-          existingShapes.current = existingShapes.current.filter(
-            (shape) => !areShapesEqual(shape, shapeToDelete)
-          );
-          previewShapeRef.current = null;
+          previewShapeRef.current = shapeToDelete;
           renderCurrentShapes();
         }
         return;
@@ -260,10 +260,30 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
       const y = e.clientY - rect.top;
 
       if (selectedTool === "eraser") {
-        const shapeUnderCursor = findShapeAtPoint(existingShapes.current, x, y);
-        if (shapeUnderCursor !== previewShapeRef.current) {
-          previewShapeRef.current = shapeUnderCursor;
-          renderCurrentShapes();
+        if (isDrawingRef.current) {
+          const shapeUnderCursor = findShapeAtPoint(
+            existingShapes.current,
+            x,
+            y
+          );
+          if (
+            shapeUnderCursor &&
+            !shapesToDelete.current.has(shapeUnderCursor)
+          ) {
+            shapesToDelete.current.add(shapeUnderCursor);
+            previewShapeRef.current = shapeUnderCursor;
+            renderCurrentShapes();
+          }
+        } else {
+          const shapeUnderCursor = findShapeAtPoint(
+            existingShapes.current,
+            x,
+            y
+          );
+          if (shapeUnderCursor !== previewShapeRef.current) {
+            previewShapeRef.current = shapeUnderCursor;
+            renderCurrentShapes();
+          }
         }
         return;
       }
@@ -440,6 +460,18 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
       if (shape) {
         existingShapes.current.push(shape);
         onDrawShape?.(shape);
+        renderCurrentShapes();
+      }
+
+      if (selectedTool === "eraser") {
+        shapesToDelete.current.forEach((shape) => {
+          onDeleteShape?.(shape);
+        });
+        existingShapes.current = existingShapes.current.filter(
+          (shape) => !shapesToDelete.current.has(shape)
+        );
+        shapesToDelete.current.clear();
+        previewShapeRef.current = null;
         renderCurrentShapes();
       }
     };
