@@ -5,6 +5,12 @@ import jwt from "jsonwebtoken";
 import { parse } from "url";
 import { prismaClient, ShapeType } from "@repo/db/client";
 
+enum StrokeStyle {
+  SOLID = "SOLID",
+  DASHED = "DASHED",
+  DOTTED = "DOTTED",
+}
+
 interface User {
   id: string;
   name: string;
@@ -17,6 +23,9 @@ interface RectangleData {
   y: number;
   width: number;
   height: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
 interface EllipseData {
@@ -24,10 +33,16 @@ interface EllipseData {
   centerY: number;
   radiusX: number;
   radiusY: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
 interface PenData {
   points: { x: number; y: number }[];
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
 interface LineData {
@@ -35,6 +50,9 @@ interface LineData {
   startY: number;
   endX: number;
   endY: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
 interface LineWithArrowData extends LineData {}
@@ -44,6 +62,9 @@ interface DiamondData {
   centerY: number;
   width: number;
   height: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
 interface TextData {
@@ -51,6 +72,7 @@ interface TextData {
   y: number;
   content: string;
   fontSize: number;
+  color: string;
 }
 
 type ShapeData =
@@ -74,7 +96,6 @@ interface DrawMessage {
   roomId?: string;
   shapeType?: ShapeType;
   shapeData?: ShapeData;
-  color?: string;
   message?: string;
   timestamp: string;
 }
@@ -195,8 +216,7 @@ class WebSocketServerSingleton {
     user: User,
     roomId: string,
     shapeType: ShapeType,
-    shapeData: ShapeData,
-    color: string = "#ffffff"
+    shapeData: ShapeData
   ) {
     if (!user.rooms.has(roomId)) {
       user.ws.send(
@@ -216,7 +236,6 @@ class WebSocketServerSingleton {
       roomId,
       shapeType,
       shapeData,
-      color,
       timestamp,
     };
 
@@ -240,7 +259,8 @@ class WebSocketServerSingleton {
 
       try {
         if (message.shapeType === ShapeType.RECTANGLE && message.shapeData) {
-          const { x, y, width, height } = message.shapeData as RectangleData;
+          const { x, y, width, height, strokeWidth, strokeStyle, color } =
+            message.shapeData as RectangleData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.RECTANGLE,
@@ -252,7 +272,9 @@ class WebSocketServerSingleton {
                   y,
                   width,
                   height,
-                  color: message.color || "#ffffff",
+                  color,
+                  strokeWidth,
+                  strokeStyle,
                 },
               },
             },
@@ -261,8 +283,15 @@ class WebSocketServerSingleton {
           message.shapeType === ShapeType.ELLIPSE &&
           message.shapeData
         ) {
-          const { centerX, centerY, radiusX, radiusY } =
-            message.shapeData as EllipseData;
+          const {
+            centerX,
+            centerY,
+            radiusX,
+            radiusY,
+            strokeWidth,
+            strokeStyle,
+            color,
+          } = message.shapeData as EllipseData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.ELLIPSE,
@@ -274,13 +303,16 @@ class WebSocketServerSingleton {
                   centerY,
                   radiusX,
                   radiusY,
-                  color: message.color || "#ffffff",
+                  color,
+                  strokeWidth,
+                  strokeStyle,
                 },
               },
             },
           });
         } else if (message.shapeType === ShapeType.PEN && message.shapeData) {
-          const { points } = message.shapeData as PenData;
+          const { points, strokeWidth, strokeStyle, color } =
+            message.shapeData as PenData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.PEN,
@@ -289,13 +321,23 @@ class WebSocketServerSingleton {
               pen: {
                 create: {
                   points,
-                  color: message.color || "#ffffff",
+                  color,
+                  strokeWidth,
+                  strokeStyle,
                 },
               },
             },
           });
         } else if (message.shapeType === ShapeType.LINE && message.shapeData) {
-          const { startX, startY, endX, endY } = message.shapeData as LineData;
+          const {
+            startX,
+            startY,
+            endX,
+            endY,
+            strokeWidth,
+            strokeStyle,
+            color,
+          } = message.shapeData as LineData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.LINE,
@@ -307,7 +349,9 @@ class WebSocketServerSingleton {
                   startY,
                   endX,
                   endY,
-                  color: message.color || "#ffffff",
+                  color,
+                  strokeWidth,
+                  strokeStyle,
                 },
               },
             },
@@ -316,8 +360,15 @@ class WebSocketServerSingleton {
           message.shapeType === ShapeType.LINE_WITH_ARROW &&
           message.shapeData
         ) {
-          const { startX, startY, endX, endY } =
-            message.shapeData as LineWithArrowData;
+          const {
+            startX,
+            startY,
+            endX,
+            endY,
+            strokeWidth,
+            strokeStyle,
+            color,
+          } = message.shapeData as LineWithArrowData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.LINE_WITH_ARROW,
@@ -329,7 +380,9 @@ class WebSocketServerSingleton {
                   startY,
                   endX,
                   endY,
-                  color: message.color || "#ffffff",
+                  color,
+                  strokeWidth,
+                  strokeStyle,
                 },
               },
             },
@@ -338,8 +391,15 @@ class WebSocketServerSingleton {
           message.shapeType === ShapeType.DIAMOND &&
           message.shapeData
         ) {
-          const { centerX, centerY, width, height } =
-            message.shapeData as DiamondData;
+          const {
+            centerX,
+            centerY,
+            width,
+            height,
+            strokeWidth,
+            strokeStyle,
+            color,
+          } = message.shapeData as DiamondData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.DIAMOND,
@@ -351,13 +411,16 @@ class WebSocketServerSingleton {
                   centerY,
                   width,
                   height,
-                  color: message.color || "#ffffff",
+                  color,
+                  strokeWidth,
+                  strokeStyle,
                 },
               },
             },
           });
         } else if (message.shapeType === ShapeType.TEXT && message.shapeData) {
-          const { x, y, content, fontSize } = message.shapeData as TextData;
+          const { x, y, content, fontSize, color } =
+            message.shapeData as TextData;
           await prismaClient.shape.create({
             data: {
               type: ShapeType.TEXT,
@@ -369,7 +432,7 @@ class WebSocketServerSingleton {
                   y,
                   content,
                   fontSize,
-                  color: message.color || "#ffffff",
+                  color,
                 },
               },
             },
@@ -519,16 +582,13 @@ class WebSocketServerSingleton {
               this.leaveRoom(currUser, parsedData.roomId);
               break;
             case "draw":
-              // Extract the color and data correctly from the client message
               const shapeData = parsedData.shapeData?.data;
-              const color = parsedData.shapeData?.color || "#ffffff";
 
               this.handleDraw(
                 currUser,
                 parsedData.roomId,
                 parsedData.shapeType,
-                shapeData,
-                color
+                shapeData
               );
               break;
             case "delete":
