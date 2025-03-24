@@ -221,7 +221,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 y: data.shapeData.y,
                 width: data.shapeData.width,
                 height: data.shapeData.height,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
                 strokeWidth: data.shapeData.strokeWidth,
                 strokeStyle: data.shapeData.strokeStyle,
               };
@@ -233,7 +233,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 centerY: data.shapeData.centerY,
                 radiusX: data.shapeData.radiusX,
                 radiusY: data.shapeData.radiusY,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
                 strokeWidth: data.shapeData.strokeWidth,
                 strokeStyle: data.shapeData.strokeStyle,
               };
@@ -242,7 +242,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
               shapeObj = {
                 type: ShapeType.Pen,
                 points: data.shapeData.points,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
                 strokeWidth: data.shapeData.strokeWidth,
                 strokeStyle: data.shapeData.strokeStyle,
               };
@@ -254,7 +254,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 startY: data.shapeData.startY,
                 endX: data.shapeData.endX,
                 endY: data.shapeData.endY,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
                 strokeWidth: data.shapeData.strokeWidth,
                 strokeStyle: data.shapeData.strokeStyle,
               };
@@ -266,7 +266,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 startY: data.shapeData.startY,
                 endX: data.shapeData.endX,
                 endY: data.shapeData.endY,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
                 strokeWidth: data.shapeData.strokeWidth,
                 strokeStyle: data.shapeData.strokeStyle,
               };
@@ -278,7 +278,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 centerY: data.shapeData.centerY,
                 width: data.shapeData.width,
                 height: data.shapeData.height,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
                 strokeWidth: data.shapeData.strokeWidth,
                 strokeStyle: data.shapeData.strokeStyle,
               };
@@ -290,7 +290,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 y: data.shapeData.y,
                 content: data.shapeData.content,
                 fontSize: data.shapeData.fontSize,
-                color: data.color || "#ffffff",
+                color: data.shapeData.color,
               };
               break;
           }

@@ -475,9 +475,11 @@ class WebSocketServerSingleton {
     }
 
     try {
-      let shape;
+      let shape: any;
+      let deleteShapeData: ShapeData | null = null;
+
       switch (shapeType) {
-        case ShapeType.RECTANGLE:
+        case ShapeType.RECTANGLE: {
           const rectData = shapeData as RectangleData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -490,9 +492,24 @@ class WebSocketServerSingleton {
                 height: rectData.height,
               },
             },
+            include: {
+              rectangle: true,
+            },
           });
+          if (shape?.rectangle) {
+            deleteShapeData = {
+              x: shape.rectangle.x,
+              y: shape.rectangle.y,
+              width: shape.rectangle.width,
+              height: shape.rectangle.height,
+              strokeWidth: shape.rectangle.strokeWidth,
+              strokeStyle: shape.rectangle.strokeStyle,
+              color: shape.rectangle.color,
+            };
+          }
           break;
-        case ShapeType.ELLIPSE:
+        }
+        case ShapeType.ELLIPSE: {
           const ellipseData = shapeData as EllipseData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -505,9 +522,24 @@ class WebSocketServerSingleton {
                 radiusY: ellipseData.radiusY,
               },
             },
+            include: {
+              ellipse: true,
+            },
           });
+          if (shape?.ellipse) {
+            deleteShapeData = {
+              centerX: shape.ellipse.centerX,
+              centerY: shape.ellipse.centerY,
+              radiusX: shape.ellipse.radiusX,
+              radiusY: shape.ellipse.radiusY,
+              strokeWidth: shape.ellipse.strokeWidth,
+              strokeStyle: shape.ellipse.strokeStyle,
+              color: shape.ellipse.color,
+            };
+          }
           break;
-        case ShapeType.PEN:
+        }
+        case ShapeType.PEN: {
           const penData = shapeData as PenData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -519,9 +551,21 @@ class WebSocketServerSingleton {
                 },
               },
             },
+            include: {
+              pen: true,
+            },
           });
+          if (shape?.pen) {
+            deleteShapeData = {
+              points: shape.pen.points,
+              strokeWidth: shape.pen.strokeWidth,
+              strokeStyle: shape.pen.strokeStyle,
+              color: shape.pen.color,
+            };
+          }
           break;
-        case ShapeType.LINE:
+        }
+        case ShapeType.LINE: {
           const lineData = shapeData as LineData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -534,9 +578,24 @@ class WebSocketServerSingleton {
                 endY: lineData.endY,
               },
             },
+            include: {
+              line: true,
+            },
           });
+          if (shape?.line) {
+            deleteShapeData = {
+              startX: shape.line.startX,
+              startY: shape.line.startY,
+              endX: shape.line.endX,
+              endY: shape.line.endY,
+              strokeWidth: shape.line.strokeWidth,
+              strokeStyle: shape.line.strokeStyle,
+              color: shape.line.color,
+            };
+          }
           break;
-        case ShapeType.LINE_WITH_ARROW:
+        }
+        case ShapeType.LINE_WITH_ARROW: {
           const arrowData = shapeData as LineWithArrowData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -549,9 +608,24 @@ class WebSocketServerSingleton {
                 endY: arrowData.endY,
               },
             },
+            include: {
+              lineWithArrow: true,
+            },
           });
+          if (shape?.lineWithArrow) {
+            deleteShapeData = {
+              startX: shape.lineWithArrow.startX,
+              startY: shape.lineWithArrow.startY,
+              endX: shape.lineWithArrow.endX,
+              endY: shape.lineWithArrow.endY,
+              strokeWidth: shape.lineWithArrow.strokeWidth,
+              strokeStyle: shape.lineWithArrow.strokeStyle,
+              color: shape.lineWithArrow.color,
+            };
+          }
           break;
-        case ShapeType.DIAMOND:
+        }
+        case ShapeType.DIAMOND: {
           const diamondData = shapeData as DiamondData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -564,9 +638,24 @@ class WebSocketServerSingleton {
                 height: diamondData.height,
               },
             },
+            include: {
+              diamond: true,
+            },
           });
+          if (shape?.diamond) {
+            deleteShapeData = {
+              centerX: shape.diamond.centerX,
+              centerY: shape.diamond.centerY,
+              width: shape.diamond.width,
+              height: shape.diamond.height,
+              strokeWidth: shape.diamond.strokeWidth,
+              strokeStyle: shape.diamond.strokeStyle,
+              color: shape.diamond.color,
+            };
+          }
           break;
-        case ShapeType.TEXT:
+        }
+        case ShapeType.TEXT: {
           const textData = shapeData as TextData;
           shape = await prismaClient.shape.findFirst({
             where: {
@@ -578,11 +667,24 @@ class WebSocketServerSingleton {
                 content: textData.content,
               },
             },
+            include: {
+              text: true,
+            },
           });
+          if (shape?.text) {
+            deleteShapeData = {
+              x: shape.text.x,
+              y: shape.text.y,
+              content: shape.text.content,
+              fontSize: shape.text.fontSize,
+              color: shape.text.color,
+            };
+          }
           break;
+        }
       }
 
-      if (shape) {
+      if (shape && deleteShapeData) {
         await prismaClient.shape.delete({
           where: {
             id: shape.id,
@@ -595,11 +697,16 @@ class WebSocketServerSingleton {
           user: user.id,
           roomId,
           shapeType,
-          shapeData,
+          shapeData: deleteShapeData,
           timestamp,
         };
 
-        this.broadCastToRoom(user, deleteMessage, roomId);
+        // Broadcast to all users in the room, including the sender
+        this.users.forEach((u) => {
+          if (u.rooms.has(roomId)) {
+            u.ws.send(JSON.stringify(deleteMessage));
+          }
+        });
       }
     } catch (error) {
       console.error("Error deleting shape:", error);
