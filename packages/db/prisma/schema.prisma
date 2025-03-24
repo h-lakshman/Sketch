@@ -17,6 +17,12 @@ enum ShapeType {
   TEXT
 }
 
+enum StrokeStyle {
+  SOLID
+  DASHED
+  DOTTED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -57,33 +63,39 @@ model Shape {
 }
 
 model Rectangle {
-  id      Int    @id @default(autoincrement())
-  shapeId Int    @unique
-  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
-  x       Float
-  y       Float
-  width   Float
-  height  Float
-  color   String @default("#ffffff")
+  id          Int         @id @default(autoincrement())
+  shapeId     Int         @unique
+  shape       Shape       @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  color       String      @default("#ffffff")
+  strokeWidth Float       @default(2)
+  strokeStyle StrokeStyle @default(SOLID)
 }
 
 model Ellipse {
-  id      Int    @id @default(autoincrement())
-  shapeId Int    @unique
-  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
-  centerX Float
-  centerY Float
-  radiusX Float
-  radiusY Float
-  color   String @default("#ffffff")
+  id          Int         @id @default(autoincrement())
+  shapeId     Int         @unique
+  shape       Shape       @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  centerX     Float
+  centerY     Float
+  radiusX     Float
+  radiusY     Float
+  color       String      @default("#ffffff")
+  strokeWidth Float       @default(2)
+  strokeStyle StrokeStyle @default(SOLID)
 }
 
 model Pen {
-  id      Int    @id @default(autoincrement())
-  shapeId Int    @unique
-  shape   Shape  @relation(fields: [shapeId], references: [id], onDelete: Cascade)
-  points  Json
-  color   String @default("#ffffff")
+  id          Int         @id @default(autoincrement())
+  shapeId     Int         @unique
+  shape       Shape       @relation(fields: [shapeId], references: [id], onDelete: Cascade)
+  points      Json
+  color       String      @default("#ffffff")
+  strokeWidth Float       @default(2)
+  strokeStyle StrokeStyle @default(SOLID)
 }
 
 model Line {
@@ -94,7 +106,9 @@ model Line {
   startY  Float
   endX    Float
   endY    Float
-  color   String @default("#ffffff")
+  color   String      @default("#ffffff")
+  strokeWidth Float       @default(2)
+  strokeStyle StrokeStyle @default(SOLID)
 }
 
 model LineWithArrow {
@@ -106,6 +120,8 @@ model LineWithArrow {
   endX    Float
   endY    Float
   color   String @default("#ffffff")
+  strokeWidth Float       @default(2)
+  strokeStyle StrokeStyle @default(SOLID)
 }
 
 model Diamond {
@@ -117,6 +133,8 @@ model Diamond {
   width   Float
   height  Float
   color   String @default("#ffffff")
+  strokeWidth Float       @default(2)
+  strokeStyle StrokeStyle @default(SOLID)
 }
 
 model Text {
