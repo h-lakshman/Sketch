@@ -665,6 +665,7 @@ class WebSocketServerSingleton {
                 x: textData.x,
                 y: textData.y,
                 content: textData.content,
+                fontSize: textData.fontSize,
               },
             },
             include: {
@@ -678,7 +679,7 @@ class WebSocketServerSingleton {
               content: shape.text.content,
               fontSize: shape.text.fontSize,
               color: shape.text.color,
-            };
+            } as TextData;
           }
           break;
         }

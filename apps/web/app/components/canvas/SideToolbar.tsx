@@ -23,6 +23,7 @@ interface SideToolbarProps {
   onFontSizeChange: (size: number) => void;
   strokeStyle: string;
   onStrokeStyleChange: (style: string) => void;
+  showFontSize?: boolean;
 }
 
 const ToolbarContainer = styled(Paper)(({ theme }) => ({
@@ -87,6 +88,7 @@ export default function SideToolbar({
   onFontSizeChange,
   strokeStyle,
   onStrokeStyleChange,
+  showFontSize = false,
 }: SideToolbarProps) {
   return (
     <ToolbarContainer elevation={3}>
@@ -153,21 +155,23 @@ export default function SideToolbar({
         </Box>
       </Box>
 
-      <Box>
-        <Typography variant="subtitle2" gutterBottom>
-          Font Size
-        </Typography>
-        <Slider
-          value={fontSize}
-          onChange={(_, value) => onFontSizeChange(value as number)}
-          min={12}
-          max={72}
-          step={2}
-          defaultValue={16}
-          valueLabelDisplay="auto"
-          sx={{ width: "100%" }}
-        />
-      </Box>
+      {showFontSize && (
+        <Box>
+          <Typography variant="subtitle2" gutterBottom>
+            Font Size
+          </Typography>
+          <Slider
+            value={fontSize}
+            onChange={(_, value) => onFontSizeChange(value as number)}
+            min={12}
+            max={72}
+            step={2}
+            defaultValue={16}
+            valueLabelDisplay="auto"
+            sx={{ width: "100%" }}
+          />
+        </Box>
+      )}
     </ToolbarContainer>
   );
 }

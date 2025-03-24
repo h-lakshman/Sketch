@@ -1,5 +1,5 @@
 // Canvas utility functions
-import { Shape, ShapeType } from "./CanvasUtils";
+import { Shape, ShapeType, Diamond } from "./CanvasUtils";
 
 // Calculate distance between a point and a line segment
 export const distanceToLineSegment = (
@@ -54,135 +54,163 @@ export const setupCanvasContext = (
 };
 
 // Find shape at given coordinates
-export const findShapeAtPoint = (
+export function findShapeAtPoint(
   shapes: Shape[],
   x: number,
-  y: number,
-  threshold: number = 5,
-  ctx: CanvasRenderingContext2D | null = null
-): Shape | null => {
+  y: number
+): Shape | null {
+  // Iterate through shapes in reverse order to check the topmost shape first
   for (let i = shapes.length - 1; i >= 0; i--) {
     const shape = shapes[i];
-
     switch (shape.type) {
-      case ShapeType.Rectangle: {
-        const rect = shape;
-        // Check each edge of the rectangle
-        const edges = [
-          { x1: rect.x, y1: rect.y, x2: rect.x + rect.width, y2: rect.y }, // Top
-          {
-            x1: rect.x + rect.width,
-            y1: rect.y,
-            x2: rect.x + rect.width,
-            y2: rect.y + rect.height,
-          }, // Right
-          {
-            x1: rect.x,
-            y1: rect.y + rect.height,
-            x2: rect.x + rect.width,
-            y2: rect.y + rect.height,
-          }, // Bottom
-          { x1: rect.x, y1: rect.y, x2: rect.x, y2: rect.y + rect.height }, // Left
-        ];
-
-        for (const edge of edges) {
-          if (
-            distanceToLineSegment(edge.x1, edge.y1, edge.x2, edge.y2, x, y) <=
-            threshold
-          ) {
-            return shape;
-          }
-        }
-        break;
-      }
-
-      case ShapeType.Ellipse: {
-        const ellipse = shape;
-        const normalizedX = (x - ellipse.centerX) / ellipse.radiusX;
-        const normalizedY = (y - ellipse.centerY) / ellipse.radiusY;
-        const distanceFromCircumference = Math.abs(
-          normalizedX * normalizedX + normalizedY * normalizedY - 1
-        );
-        if (distanceFromCircumference <= 0.15) {
-          return shape;
-        }
-        break;
-      }
-
-      case ShapeType.Pen: {
-        const pen = shape;
-        for (let j = 1; j < pen.points.length; j++) {
-          const p1 = pen.points[j - 1];
-          const p2 = pen.points[j];
-          if (distanceToLineSegment(p1.x, p1.y, p2.x, p2.y, x, y) < threshold) {
-            return shape;
-          }
-        }
-        break;
-      }
-
-      case ShapeType.Line:
-      case ShapeType.LineWithArrow: {
-        const line = shape;
+      case ShapeType.Rectangle:
         if (
-          distanceToLineSegment(
-            line.startX,
-            line.startY,
-            line.endX,
-            line.endY,
-            x,
-            y
-          ) <= threshold
+          x >= shape.x &&
+          x <= shape.x + shape.width &&
+          y >= shape.y &&
+          y <= shape.y + shape.height
         ) {
           return shape;
         }
         break;
-      }
-
-      case ShapeType.Diamond: {
-        const diamond = shape;
-        const halfWidth = diamond.width / 2;
-        const halfHeight = diamond.height / 2;
-        const points = [
-          { x: diamond.centerX, y: diamond.centerY - halfHeight },
-          { x: diamond.centerX + halfWidth, y: diamond.centerY },
-          { x: diamond.centerX, y: diamond.centerY + halfHeight },
-          { x: diamond.centerX - halfWidth, y: diamond.centerY },
-        ];
-
-        for (let j = 0; j < points.length; j++) {
-          const p1 = points[j];
-          const p2 = points[(j + 1) % points.length];
+      case ShapeType.Ellipse:
+        const normalizedX = (x - shape.centerX) / shape.radiusX;
+        const normalizedY = (y - shape.centerY) / shape.radiusY;
+        if (normalizedX * normalizedX + normalizedY * normalizedY <= 1) {
+          return shape;
+        }
+        break;
+      case ShapeType.Pen:
+        for (let j = 0; j < shape.points.length - 1; j++) {
+          const point1 = shape.points[j];
+          const point2 = shape.points[j + 1];
           if (
-            distanceToLineSegment(p1.x, p1.y, p2.x, p2.y, x, y) <= threshold
+            isPointNearLine(
+              x,
+              y,
+              point1.x,
+              point1.y,
+              point2.x,
+              point2.y,
+              shape.strokeWidth
+            )
           ) {
             return shape;
           }
         }
         break;
-      }
-
-      case ShapeType.Text: {
-        const text = shape;
+      case ShapeType.Line:
+      case ShapeType.LineWithArrow:
+        if (
+          isPointNearLine(
+            x,
+            y,
+            shape.startX,
+            shape.startY,
+            shape.endX,
+            shape.endY,
+            shape.strokeWidth
+          )
+        ) {
+          return shape;
+        }
+        break;
+      case ShapeType.Diamond:
+        const points = getDiamondPoints(shape);
+        if (isPointInPolygon(x, y, points)) {
+          return shape;
+        }
+        break;
+      case ShapeType.Text:
+        // Create a bounding box for text based on font size
+        const textHeight = shape.fontSize;
+        const ctx = document.createElement("canvas").getContext("2d");
         if (ctx) {
-          const textHeight = text.fontSize;
-          ctx.font = `${text.fontSize}px Arial`;
-          const textWidth = ctx.measureText(text.content).width;
+          ctx.font = `${shape.fontSize}px Arial`;
+          const textWidth = ctx.measureText(shape.content).width;
           if (
-            x >= text.x &&
-            x <= text.x + textWidth &&
-            y >= text.y - textHeight &&
-            y <= text.y
+            x >= shape.x &&
+            x <= shape.x + textWidth &&
+            y >= shape.y - textHeight &&
+            y <= shape.y
           ) {
             return shape;
           }
         }
         break;
-      }
     }
   }
   return null;
-};
+}
+
+function isPointNearLine(
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  threshold: number
+): boolean {
+  const A = px - x1;
+  const B = py - y1;
+  const C = x2 - x1;
+  const D = y2 - y1;
+
+  const dot = A * C + B * D;
+  const len_sq = C * C + D * D;
+  let param = -1;
+
+  if (len_sq !== 0) {
+    param = dot / len_sq;
+  }
+
+  let xx, yy;
+
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  } else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  } else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+
+  const dx = px - xx;
+  const dy = py - yy;
+
+  return Math.sqrt(dx * dx + dy * dy) <= threshold;
+}
+
+function getDiamondPoints(shape: Diamond): { x: number; y: number }[] {
+  return [
+    { x: shape.centerX, y: shape.centerY - shape.height / 2 }, // Top
+    { x: shape.centerX + shape.width / 2, y: shape.centerY }, // Right
+    { x: shape.centerX, y: shape.centerY + shape.height / 2 }, // Bottom
+    { x: shape.centerX - shape.width / 2, y: shape.centerY }, // Left
+  ];
+}
+
+function isPointInPolygon(
+  x: number,
+  y: number,
+  points: { x: number; y: number }[]
+): boolean {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const xi = points[i].x;
+    const yi = points[i].y;
+    const xj = points[j].x;
+    const yj = points[j].y;
+
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
 // Compare two shapes for equality
 export const areShapesEqual = (shape1: Shape, shape2: Shape): boolean => {

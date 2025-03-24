@@ -634,49 +634,52 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
           isDarkMode={isDarkMode}
           onThemeToggle={() => setIsDarkMode(!isDarkMode)}
         />
-        <SideToolbar
-          strokeWidth={strokeWidth}
-          onStrokeWidthChange={(width) => {
-            setStrokeWidth(width);
-            const ctx = ctxRef.current;
-            if (ctx) {
-              ctx.lineWidth = width;
-              renderCurrentShapes();
-            }
-          }}
-          strokeColor={currentStrokeColor}
-          onStrokeColorChange={(color) => {
-            setCurrentStrokeColor(color);
-            const ctx = ctxRef.current;
-            if (ctx) {
-              ctx.strokeStyle = color;
-            }
-          }}
-          fontSize={fontSize}
-          onFontSizeChange={(size) => {
-            setFontSize(size);
-            const ctx = ctxRef.current;
-            if (ctx) {
-              ctx.font = `${size}px Arial`;
-              renderCurrentShapes();
-            }
-          }}
-          strokeStyle={strokeStyle}
-          onStrokeStyleChange={(style) => {
-            setStrokeStyle(style as StrokeStyle);
-            const ctx = ctxRef.current;
-            if (ctx) {
-              ctx.setLineDash(
-                style === StrokeStyle.DASHED
-                  ? [10, 5]
-                  : style === StrokeStyle.DOTTED
-                    ? [2, 2]
-                    : []
-              );
-              renderCurrentShapes();
-            }
-          }}
-        />
+        {selectedTool !== "eraser" && selectedTool !== "hand" && (
+          <SideToolbar
+            strokeWidth={strokeWidth}
+            onStrokeWidthChange={(width) => {
+              setStrokeWidth(width);
+              const ctx = ctxRef.current;
+              if (ctx) {
+                ctx.lineWidth = width;
+                renderCurrentShapes();
+              }
+            }}
+            strokeColor={currentStrokeColor}
+            onStrokeColorChange={(color) => {
+              setCurrentStrokeColor(color);
+              const ctx = ctxRef.current;
+              if (ctx) {
+                ctx.strokeStyle = color;
+              }
+            }}
+            fontSize={fontSize}
+            onFontSizeChange={(size) => {
+              setFontSize(size);
+              const ctx = ctxRef.current;
+              if (ctx) {
+                ctx.font = `${size}px Arial`;
+                renderCurrentShapes();
+              }
+            }}
+            strokeStyle={strokeStyle}
+            onStrokeStyleChange={(style) => {
+              setStrokeStyle(style as StrokeStyle);
+              const ctx = ctxRef.current;
+              if (ctx) {
+                ctx.setLineDash(
+                  style === StrokeStyle.DASHED
+                    ? [10, 5]
+                    : style === StrokeStyle.DOTTED
+                      ? [2, 2]
+                      : []
+                );
+                renderCurrentShapes();
+              }
+            }}
+            showFontSize={selectedTool === "text"}
+          />
+        )}
         <canvas
           ref={canvasRef}
           style={{
