@@ -11,28 +11,15 @@ import React, {
 import {
   Shape,
   ShapeType,
-  renderShapes,
   drawRect,
   drawPen,
   drawEllipse,
-  Rectangle,
-  Ellipse,
-  Pen,
-  Line,
-  LineWithArrow,
-  Diamond,
-  Text,
   drawLine,
   drawLineWithArrow,
   drawDiamond,
-  drawText,
+  StrokeStyle,
 } from "./CanvasUtils";
-import {
-  findShapeAtPoint,
-  areShapesEqual,
-  distanceToLineSegment,
-  setupCanvasContext,
-} from "./helper";
+import { findShapeAtPoint, areShapesEqual, setupCanvasContext } from "./helper";
 import ToolBar, { ToolType } from "./ToolBar";
 import SideToolbar from "./SideToolbar";
 
@@ -63,7 +50,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
     const currentTextRef = useRef("");
     const textPositionRef = useRef({ x: 0, y: 0 });
     const [strokeWidth, setStrokeWidth] = useState(2);
-    const [strokeStyle, setStrokeStyle] = useState<string>("solid");
+    const [strokeStyle, setStrokeStyle] = useState<StrokeStyle>(
+      StrokeStyle.SOLID
+    );
     const cursorBlinkRef = useRef<number | null>(null);
     const [fontSize, setFontSize] = useState(16);
     const [currentStrokeColor, setCurrentStrokeColor] = useState(
@@ -85,9 +74,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
 
       setupCanvasContext(ctx, currentStrokeColor, strokeWidth);
       ctx.setLineDash(
-        strokeStyle === "dashed"
+        strokeStyle === StrokeStyle.DASHED
           ? [10, 5]
-          : strokeStyle === "dotted"
+          : strokeStyle === StrokeStyle.DOTTED
             ? [2, 2]
             : []
       );
@@ -101,13 +90,10 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
 
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       existingShapes.current.forEach((shape) => {
-        const shapeColor = shape.color || (isDarkMode ? "#ffffff" : "#000000");
         // If shape is being previewed for deletion, use highlight color
         const isPreview =
           previewShapeRef.current &&
           areShapesEqual(shape, previewShapeRef.current);
-        const finalColor = isPreview ? highlightColor : shapeColor;
-
         switch (shape.type) {
           case ShapeType.Rectangle:
             drawRect(
@@ -116,7 +102,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.y,
               shape.width,
               shape.height,
-              finalColor
+              shape.color,
+              shape.strokeWidth,
+              shape.strokeStyle
             );
             break;
           case ShapeType.Ellipse:
@@ -126,11 +114,19 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.centerY,
               shape.radiusX,
               shape.radiusY,
-              finalColor
+              shape.color,
+              shape.strokeWidth,
+              shape.strokeStyle
             );
             break;
           case ShapeType.Pen:
-            drawPen(ctx, shape.points, finalColor);
+            drawPen(
+              ctx,
+              shape.points,
+              shape.color,
+              shape.strokeWidth,
+              shape.strokeStyle
+            );
             break;
           case ShapeType.Line:
             drawLine(
@@ -139,7 +135,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.startY,
               shape.endX,
               shape.endY,
-              finalColor
+              shape.color,
+              shape.strokeWidth,
+              shape.strokeStyle
             );
             break;
           case ShapeType.LineWithArrow:
@@ -149,7 +147,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.startY,
               shape.endX,
               shape.endY,
-              finalColor
+              shape.color,
+              shape.strokeWidth,
+              shape.strokeStyle
             );
             break;
           case ShapeType.Diamond:
@@ -159,12 +159,14 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               shape.centerY,
               shape.width,
               shape.height,
-              finalColor
+              shape.color,
+              shape.strokeWidth,
+              shape.strokeStyle
             );
             break;
           case ShapeType.Text:
             ctx.font = `${shape.fontSize}px Arial`;
-            ctx.fillStyle = finalColor;
+            ctx.fillStyle = shape.color;
             ctx.fillText(shape.content, shape.x, shape.y);
             break;
         }
@@ -282,7 +284,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             startYRef.current,
             x - startXRef.current,
             y - startYRef.current,
-            currentStrokeColor
+            currentStrokeColor,
+            strokeWidth,
+            strokeStyle
           );
           break;
         case "ellipse":
@@ -292,12 +296,20 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             (startYRef.current + y) / 2,
             Math.abs(x - startXRef.current) / 2,
             Math.abs(y - startYRef.current) / 2,
-            currentStrokeColor
+            currentStrokeColor,
+            strokeWidth,
+            strokeStyle
           );
           break;
         case "pen":
           penPointsRef.current.push({ x, y });
-          drawPen(ctx, penPointsRef.current, currentStrokeColor);
+          drawPen(
+            ctx,
+            penPointsRef.current,
+            currentStrokeColor,
+            strokeWidth,
+            strokeStyle
+          );
           break;
         case "line":
           drawLine(
@@ -306,7 +318,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             startYRef.current,
             x,
             y,
-            currentStrokeColor
+            currentStrokeColor,
+            strokeWidth,
+            strokeStyle
           );
           break;
         case "lineWithArrow":
@@ -316,7 +330,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             startYRef.current,
             x,
             y,
-            currentStrokeColor
+            currentStrokeColor,
+            strokeWidth,
+            strokeStyle
           );
           break;
         case "diamond":
@@ -326,7 +342,9 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             (startYRef.current + y) / 2,
             Math.abs(x - startXRef.current),
             Math.abs(y - startYRef.current),
-            currentStrokeColor
+            currentStrokeColor,
+            strokeWidth,
+            strokeStyle
           );
           break;
       }
@@ -354,6 +372,8 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             width: x - startXRef.current,
             height: y - startYRef.current,
             color: currentStrokeColor,
+            strokeWidth: strokeWidth,
+            strokeStyle: strokeStyle,
           };
           break;
         case "ellipse":
@@ -364,6 +384,8 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             radiusX: Math.abs(x - startXRef.current) / 2,
             radiusY: Math.abs(y - startYRef.current) / 2,
             color: currentStrokeColor,
+            strokeWidth: strokeWidth,
+            strokeStyle: strokeStyle,
           };
           break;
         case "pen":
@@ -372,6 +394,8 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
               type: ShapeType.Pen,
               points: penPointsRef.current,
               color: currentStrokeColor,
+              strokeWidth: strokeWidth,
+              strokeStyle: strokeStyle,
             };
           }
           break;
@@ -383,6 +407,8 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             endX: x,
             endY: y,
             color: currentStrokeColor,
+            strokeWidth: strokeWidth,
+            strokeStyle: strokeStyle,
           };
           break;
         case "lineWithArrow":
@@ -393,6 +419,8 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             endX: x,
             endY: y,
             color: currentStrokeColor,
+            strokeWidth: strokeWidth,
+            strokeStyle: strokeStyle,
           };
           break;
         case "diamond":
@@ -403,6 +431,8 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
             width: Math.abs(x - startXRef.current),
             height: Math.abs(y - startYRef.current),
             color: currentStrokeColor,
+            strokeWidth: strokeWidth,
+            strokeStyle: strokeStyle,
           };
           break;
       }
@@ -601,11 +631,15 @@ const BaseCanvas = forwardRef<BaseCanvasHandle, BaseCanvasProps>(
           }}
           strokeStyle={strokeStyle}
           onStrokeStyleChange={(style) => {
-            setStrokeStyle(style);
+            setStrokeStyle(style as StrokeStyle);
             const ctx = ctxRef.current;
             if (ctx) {
               ctx.setLineDash(
-                style === "dashed" ? [10, 5] : style === "dotted" ? [2, 2] : []
+                style === StrokeStyle.DASHED
+                  ? [10, 5]
+                  : style === StrokeStyle.DOTTED
+                    ? [2, 2]
+                    : []
               );
               renderCurrentShapes();
             }

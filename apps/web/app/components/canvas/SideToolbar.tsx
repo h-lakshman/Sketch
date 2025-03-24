@@ -73,9 +73,9 @@ const colors = [
 ];
 
 const strokeStyles = [
-  { value: "solid", label: "Solid" },
-  { value: "dashed", label: "Dashed" },
-  { value: "dotted", label: "Dotted" },
+  { value: "SOLID", label: "Solid" },
+  { value: "DASHED", label: "Dashed" },
+  { value: "DOTTED", label: "Dotted" },
 ];
 
 export default function SideToolbar({

@@ -8,62 +8,82 @@ export enum ShapeType {
   Diamond = "DIAMOND",
   Text = "TEXT",
 }
-
-interface BaseShape {
-  color: string;
+export enum StrokeStyle {
+  SOLID = "SOLID",
+  DASHED = "DASHED",
+  DOTTED = "DOTTED",
 }
 
-export interface Rectangle extends BaseShape {
+export interface Rectangle {
   type: ShapeType.Rectangle;
   x: number;
   y: number;
   width: number;
   height: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
-export interface Ellipse extends BaseShape {
+export interface Ellipse {
   type: ShapeType.Ellipse;
   centerX: number;
   centerY: number;
   radiusX: number;
   radiusY: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
-export interface Pen extends BaseShape {
+export interface Pen {
   type: ShapeType.Pen;
   points: { x: number; y: number }[];
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
-export interface Line extends BaseShape {
+export interface Line {
   type: ShapeType.Line;
   startX: number;
   startY: number;
   endX: number;
   endY: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
-export interface LineWithArrow extends BaseShape {
+export interface LineWithArrow {
   type: ShapeType.LineWithArrow;
   startX: number;
   startY: number;
   endX: number;
   endY: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
-export interface Diamond extends BaseShape {
+export interface Diamond {
   type: ShapeType.Diamond;
   centerX: number;
   centerY: number;
   width: number;
   height: number;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  color: string;
 }
 
-export interface Text extends BaseShape {
+export interface Text {
   type: ShapeType.Text;
   x: number;
   y: number;
   content: string;
   fontSize: number;
+  color: string;
 }
 
 export type Shape =
@@ -81,9 +101,19 @@ export const drawRect = (
   y: number,
   width: number,
   height: number,
-  strokeColor: string = "#ffffff"
+  strokeColor: string = "#ffffff",
+  strokeWidth: number = 1,
+  strokeStyle: StrokeStyle = StrokeStyle.SOLID
 ) => {
   ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.setLineDash(
+    strokeStyle === StrokeStyle.DASHED
+      ? [10, 5]
+      : strokeStyle === StrokeStyle.DOTTED
+        ? [2, 2]
+        : []
+  );
   ctx.strokeRect(x, y, width, height);
 };
 
@@ -93,10 +123,21 @@ export const drawEllipse = (
   centerY: number,
   radiusX: number,
   radiusY: number,
-  strokeColor: string = "#ffffff"
+  strokeColor: string = "#ffffff",
+  strokeWidth: number = 1,
+  strokeStyle: StrokeStyle = StrokeStyle.SOLID
 ) => {
   ctx.beginPath();
   ctx.strokeStyle = strokeColor;
+  ctx.fillStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.setLineDash(
+    strokeStyle === StrokeStyle.DASHED
+      ? [10, 5]
+      : strokeStyle === StrokeStyle.DOTTED
+        ? [2, 2]
+        : []
+  );
   ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
   ctx.stroke();
 };
@@ -104,12 +145,22 @@ export const drawEllipse = (
 export const drawPen = (
   ctx: CanvasRenderingContext2D,
   points: { x: number; y: number }[],
-  strokeColor: string = "#ffffff"
+  strokeColor: string = "#ffffff",
+  strokeWidth: number = 1,
+  strokeStyle: StrokeStyle = StrokeStyle.SOLID
 ) => {
   if (points.length < 2) return;
 
   ctx.beginPath();
   ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.setLineDash(
+    strokeStyle === StrokeStyle.DASHED
+      ? [10, 5]
+      : strokeStyle === StrokeStyle.DOTTED
+        ? [2, 2]
+        : []
+  );
   ctx.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) {
     ctx.lineTo(points[i].x, points[i].y);
@@ -127,10 +178,20 @@ export const drawLine = (
   startY: number,
   endX: number,
   endY: number,
-  strokeColor: string = "#ffffff"
+  strokeColor: string = "#ffffff",
+  strokeWidth: number = 1,
+  strokeStyle: StrokeStyle = StrokeStyle.SOLID
 ) => {
   ctx.beginPath();
   ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.setLineDash(
+    strokeStyle === StrokeStyle.DASHED
+      ? [10, 5]
+      : strokeStyle === StrokeStyle.DOTTED
+        ? [2, 2]
+        : []
+  );
   ctx.moveTo(startX, startY);
   ctx.lineTo(endX, endY);
   ctx.stroke();
@@ -142,10 +203,21 @@ export const drawLineWithArrow = (
   startY: number,
   endX: number,
   endY: number,
-  strokeColor: string = "#ffffff"
+  strokeColor: string = "#ffffff",
+  strokeWidth: number = 1,
+  strokeStyle: StrokeStyle = StrokeStyle.SOLID
 ) => {
   // Draw the main line
-  drawLine(ctx, startX, startY, endX, endY, strokeColor);
+  drawLine(
+    ctx,
+    startX,
+    startY,
+    endX,
+    endY,
+    strokeColor,
+    strokeWidth,
+    strokeStyle
+  );
 
   // Calculate arrow head
   const headLength = 15;
@@ -165,6 +237,8 @@ export const drawLineWithArrow = (
     endY - headLength * Math.sin(angle + arrowAngle)
   );
   ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+
   ctx.stroke();
 };
 
@@ -174,13 +248,23 @@ export const drawDiamond = (
   centerY: number,
   width: number,
   height: number,
-  strokeColor: string = "#ffffff"
+  strokeColor: string = "#ffffff",
+  strokeWidth: number = 1,
+  strokeStyle: StrokeStyle = StrokeStyle.SOLID
 ) => {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
   ctx.beginPath();
   ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = strokeWidth;
+  ctx.setLineDash(
+    strokeStyle === StrokeStyle.DASHED
+      ? [10, 5]
+      : strokeStyle === StrokeStyle.DOTTED
+        ? [2, 2]
+        : []
+  );
   ctx.moveTo(centerX, centerY - halfHeight); // Top point
   ctx.lineTo(centerX + halfWidth, centerY); // Right point
   ctx.lineTo(centerX, centerY + halfHeight); // Bottom point
@@ -200,75 +284,4 @@ export const drawText = (
   ctx.font = `${fontSize}px Arial`;
   ctx.fillStyle = strokeColor;
   ctx.fillText(content, x, y);
-};
-
-export const renderShapes = (
-  ctx: CanvasRenderingContext2D,
-  shapes: Shape[],
-  defaultColor: string = "#ffffff"
-) => {
-  clearCanvas(ctx);
-  if (!shapes) return;
-
-  shapes.forEach((shape) => {
-    const shapeColor = shape.color || defaultColor;
-    switch (shape.type) {
-      case ShapeType.Rectangle:
-        drawRect(ctx, shape.x, shape.y, shape.width, shape.height, shapeColor);
-        break;
-      case ShapeType.Ellipse:
-        drawEllipse(
-          ctx,
-          shape.centerX,
-          shape.centerY,
-          shape.radiusX,
-          shape.radiusY,
-          shapeColor
-        );
-        break;
-      case ShapeType.Pen:
-        drawPen(ctx, shape.points, shapeColor);
-        break;
-      case ShapeType.Line:
-        drawLine(
-          ctx,
-          shape.startX,
-          shape.startY,
-          shape.endX,
-          shape.endY,
-          shapeColor
-        );
-        break;
-      case ShapeType.LineWithArrow:
-        drawLineWithArrow(
-          ctx,
-          shape.startX,
-          shape.startY,
-          shape.endX,
-          shape.endY,
-          shapeColor
-        );
-        break;
-      case ShapeType.Diamond:
-        drawDiamond(
-          ctx,
-          shape.centerX,
-          shape.centerY,
-          shape.width,
-          shape.height,
-          shapeColor
-        );
-        break;
-      case ShapeType.Text:
-        drawText(
-          ctx,
-          shape.x,
-          shape.y,
-          shape.content,
-          shape.fontSize,
-          shapeColor
-        );
-        break;
-    }
-  });
 };

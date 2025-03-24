@@ -21,74 +21,78 @@ export default function Canvas({ roomId }: { roomId: string }) {
         const response = await getShapes(roomId);
         const shapes = response.shapes
           .map((shape: any) => {
-            let color;
             switch (shape.type) {
               case "RECTANGLE":
-                color = shape.rectangle.color;
                 return {
                   type: "RECTANGLE" as const,
                   x: shape.rectangle.x,
                   y: shape.rectangle.y,
                   width: shape.rectangle.width,
                   height: shape.rectangle.height,
-                  color,
+                  color: shape.rectangle.color,
+                  strokeWidth: shape.rectangle.strokeWidth,
+                  strokeStyle: shape.rectangle.strokeStyle,
                 };
               case "ELLIPSE":
-                color = shape.ellipse.color;
                 return {
                   type: "ELLIPSE" as const,
                   centerX: shape.ellipse.centerX,
                   centerY: shape.ellipse.centerY,
                   radiusX: shape.ellipse.radiusX,
                   radiusY: shape.ellipse.radiusY,
-                  color,
+                  color: shape.ellipse.color,
+                  strokeWidth: shape.ellipse.strokeWidth,
+                  strokeStyle: shape.ellipse.strokeStyle,
                 };
               case "PEN":
-                color = shape.pen.color;
                 return {
                   type: "PEN" as const,
                   points: shape.pen.points,
-                  color,
+                  color: shape.pen.color,
+                  strokeWidth: shape.pen.strokeWidth,
+                  strokeStyle: shape.pen.strokeStyle,
                 };
               case "LINE":
-                color = shape.line.color;
                 return {
                   type: "LINE" as const,
                   startX: shape.line.startX,
                   startY: shape.line.startY,
                   endX: shape.line.endX,
                   endY: shape.line.endY,
-                  color,
+                  color: shape.line.color,
+                  strokeWidth: shape.line.strokeWidth,
+                  strokeStyle: shape.line.strokeStyle,
                 };
               case "LINE_WITH_ARROW":
-                color = shape.lineWithArrow.color;
                 return {
                   type: "LINE_WITH_ARROW" as const,
                   startX: shape.lineWithArrow.startX,
                   startY: shape.lineWithArrow.startY,
                   endX: shape.lineWithArrow.endX,
                   endY: shape.lineWithArrow.endY,
-                  color,
+                  color: shape.lineWithArrow.color,
+                  strokeWidth: shape.lineWithArrow.strokeWidth,
+                  strokeStyle: shape.lineWithArrow.strokeStyle,
                 };
               case "DIAMOND":
-                color = shape.diamond.color;
                 return {
                   type: "DIAMOND" as const,
                   centerX: shape.diamond.centerX,
                   centerY: shape.diamond.centerY,
                   width: shape.diamond.width,
                   height: shape.diamond.height,
-                  color,
+                  color: shape.diamond.color,
+                  strokeWidth: shape.diamond.strokeWidth,
+                  strokeStyle: shape.diamond.strokeStyle,
                 };
               case "TEXT":
-                color = shape.text.color;
                 return {
                   type: "TEXT" as const,
                   x: shape.text.x,
                   y: shape.text.y,
                   content: shape.text.content,
                   fontSize: shape.text.fontSize,
-                  color,
+                  color: shape.text.color,
                 };
               default:
                 console.warn("Unknown shape type:", shape.type);
@@ -126,6 +130,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                   width: data.shapeData.width,
                   height: data.shapeData.height,
                   color: data.color || "#ffffff",
+                  strokeWidth: data.shapeData.strokeWidth,
+                  strokeStyle: data.shapeData.strokeStyle,
                 };
                 break;
               case "ELLIPSE":
@@ -136,6 +142,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                   radiusX: data.shapeData.radiusX,
                   radiusY: data.shapeData.radiusY,
                   color: data.color || "#ffffff",
+                  strokeWidth: data.shapeData.strokeWidth,
+                  strokeStyle: data.shapeData.strokeStyle,
                 };
                 break;
               case "PEN":
@@ -143,6 +151,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                   type: ShapeType.Pen,
                   points: data.shapeData.points,
                   color: data.color || "#ffffff",
+                  strokeWidth: data.shapeData.strokeWidth,
+                  strokeStyle: data.shapeData.strokeStyle,
                 };
                 break;
               case "LINE":
@@ -153,6 +163,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                   endX: data.shapeData.endX,
                   endY: data.shapeData.endY,
                   color: data.color || "#ffffff",
+                  strokeWidth: data.shapeData.strokeWidth,
+                  strokeStyle: data.shapeData.strokeStyle,
                 };
                 break;
               case "LINE_WITH_ARROW":
@@ -163,6 +175,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                   endX: data.shapeData.endX,
                   endY: data.shapeData.endY,
                   color: data.color || "#ffffff",
+                  strokeWidth: data.shapeData.strokeWidth,
+                  strokeStyle: data.shapeData.strokeStyle,
                 };
                 break;
               case "DIAMOND":
@@ -173,6 +187,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                   width: data.shapeData.width,
                   height: data.shapeData.height,
                   color: data.color || "#ffffff",
+                  strokeWidth: data.shapeData.strokeWidth,
+                  strokeStyle: data.shapeData.strokeStyle,
                 };
                 break;
               case "TEXT":
@@ -206,6 +222,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 width: data.shapeData.width,
                 height: data.shapeData.height,
                 color: data.color || "#ffffff",
+                strokeWidth: data.shapeData.strokeWidth,
+                strokeStyle: data.shapeData.strokeStyle,
               };
               break;
             case "ELLIPSE":
@@ -216,6 +234,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 radiusX: data.shapeData.radiusX,
                 radiusY: data.shapeData.radiusY,
                 color: data.color || "#ffffff",
+                strokeWidth: data.shapeData.strokeWidth,
+                strokeStyle: data.shapeData.strokeStyle,
               };
               break;
             case "PEN":
@@ -223,6 +243,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 type: ShapeType.Pen,
                 points: data.shapeData.points,
                 color: data.color || "#ffffff",
+                strokeWidth: data.shapeData.strokeWidth,
+                strokeStyle: data.shapeData.strokeStyle,
               };
               break;
             case "LINE":
@@ -233,6 +255,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 endX: data.shapeData.endX,
                 endY: data.shapeData.endY,
                 color: data.color || "#ffffff",
+                strokeWidth: data.shapeData.strokeWidth,
+                strokeStyle: data.shapeData.strokeStyle,
               };
               break;
             case "LINE_WITH_ARROW":
@@ -243,6 +267,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 endX: data.shapeData.endX,
                 endY: data.shapeData.endY,
                 color: data.color || "#ffffff",
+                strokeWidth: data.shapeData.strokeWidth,
+                strokeStyle: data.shapeData.strokeStyle,
               };
               break;
             case "DIAMOND":
@@ -253,6 +279,8 @@ export default function Canvas({ roomId }: { roomId: string }) {
                 width: data.shapeData.width,
                 height: data.shapeData.height,
                 color: data.color || "#ffffff",
+                strokeWidth: data.shapeData.strokeWidth,
+                strokeStyle: data.shapeData.strokeStyle,
               };
               break;
             case "TEXT":
