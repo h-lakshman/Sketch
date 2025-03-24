@@ -9,6 +9,7 @@ import {
   LineWithArrow,
   Diamond,
   Text,
+  StrokeStyle,
 } from "@/app/components/canvas/CanvasUtils";
 
 type MessageHandler = (data: any) => void;
@@ -17,7 +18,6 @@ type ConnectionHandler = () => void;
 
 interface ShapePayload {
   type: ShapeType;
-  color: string;
   data: {
     x?: number;
     y?: number;
@@ -34,6 +34,9 @@ interface ShapePayload {
     endY?: number;
     content?: string;
     fontSize?: number;
+    strokeWidth?: number;
+    strokeStyle?: StrokeStyle;
+    color?: string;
   };
 }
 
@@ -128,7 +131,6 @@ export default class WebSocketClient {
     // Format shape data to match server's expected structure
     const shapeData = {
       type: shape.type,
-      color: shape.color || "#000000",
       data: (() => {
         switch (shape.type) {
           case ShapeType.Rectangle:
@@ -138,6 +140,9 @@ export default class WebSocketClient {
               y: rect.y,
               width: rect.width,
               height: rect.height,
+              strokeWidth: rect.strokeWidth,
+              strokeStyle: rect.strokeStyle,
+              color: rect.color,
             };
           case ShapeType.Ellipse:
             const ellipse = shape as Ellipse;
@@ -146,6 +151,9 @@ export default class WebSocketClient {
               centerY: ellipse.centerY,
               radiusX: ellipse.radiusX,
               radiusY: ellipse.radiusY,
+              strokeWidth: ellipse.strokeWidth,
+              strokeStyle: ellipse.strokeStyle,
+              color: ellipse.color,
             };
           case ShapeType.Pen:
             const pen = shape as Pen;
@@ -159,6 +167,9 @@ export default class WebSocketClient {
               startY: line.startY,
               endX: line.endX,
               endY: line.endY,
+              strokeWidth: line.strokeWidth,
+              strokeStyle: line.strokeStyle,
+              color: line.color,
             };
           case ShapeType.LineWithArrow:
             const arrow = shape as LineWithArrow;
@@ -167,6 +178,9 @@ export default class WebSocketClient {
               startY: arrow.startY,
               endX: arrow.endX,
               endY: arrow.endY,
+              strokeWidth: arrow.strokeWidth,
+              strokeStyle: arrow.strokeStyle,
+              color: arrow.color,
             };
           case ShapeType.Diamond:
             const diamond = shape as Diamond;
@@ -175,6 +189,9 @@ export default class WebSocketClient {
               centerY: diamond.centerY,
               width: diamond.width,
               height: diamond.height,
+              strokeWidth: diamond.strokeWidth,
+              strokeStyle: diamond.strokeStyle,
+              color: diamond.color,
             };
           case ShapeType.Text:
             const text = shape as Text;
@@ -183,6 +200,7 @@ export default class WebSocketClient {
               y: text.y,
               content: text.content,
               fontSize: text.fontSize,
+              color: text.color,
             };
           default:
             return {};
@@ -199,10 +217,8 @@ export default class WebSocketClient {
   }
 
   public deleteShape(roomId: string, shape: Shape): void {
-    // Format shape data to match server's expected structure
     const shapeData = {
       type: shape.type,
-      color: shape.color || "#000000",
       data: (() => {
         switch (shape.type) {
           case ShapeType.Rectangle:
@@ -212,6 +228,9 @@ export default class WebSocketClient {
               y: rect.y,
               width: rect.width,
               height: rect.height,
+              strokeWidth: rect.strokeWidth,
+              strokeStyle: rect.strokeStyle,
+              color: rect.color,
             };
           case ShapeType.Ellipse:
             const ellipse = shape as Ellipse;
@@ -220,11 +239,17 @@ export default class WebSocketClient {
               centerY: ellipse.centerY,
               radiusX: ellipse.radiusX,
               radiusY: ellipse.radiusY,
+              strokeWidth: ellipse.strokeWidth,
+              strokeStyle: ellipse.strokeStyle,
+              color: ellipse.color,
             };
           case ShapeType.Pen:
             const pen = shape as Pen;
             return {
               points: pen.points,
+              strokeWidth: pen.strokeWidth,
+              strokeStyle: pen.strokeStyle,
+              color: pen.color,
             };
           case ShapeType.Line:
             const line = shape as Line;
@@ -233,6 +258,9 @@ export default class WebSocketClient {
               startY: line.startY,
               endX: line.endX,
               endY: line.endY,
+              strokeWidth: line.strokeWidth,
+              strokeStyle: line.strokeStyle,
+              color: line.color,
             };
           case ShapeType.LineWithArrow:
             const arrow = shape as LineWithArrow;
@@ -241,6 +269,9 @@ export default class WebSocketClient {
               startY: arrow.startY,
               endX: arrow.endX,
               endY: arrow.endY,
+              strokeWidth: arrow.strokeWidth,
+              strokeStyle: arrow.strokeStyle,
+              color: arrow.color,
             };
           case ShapeType.Diamond:
             const diamond = shape as Diamond;
@@ -249,6 +280,9 @@ export default class WebSocketClient {
               centerY: diamond.centerY,
               width: diamond.width,
               height: diamond.height,
+              strokeWidth: diamond.strokeWidth,
+              strokeStyle: diamond.strokeStyle,
+              color: diamond.color,
             };
           case ShapeType.Text:
             const text = shape as Text;
@@ -257,6 +291,7 @@ export default class WebSocketClient {
               y: text.y,
               content: text.content,
               fontSize: text.fontSize,
+              color: text.color,
             };
           default:
             return {};
