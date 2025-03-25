@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import BaseCanvas, { BaseCanvasHandle } from "../components/canvas/BaseCanvas";
 import { Button } from "@mui/material";
 import GroupIcon from "@mui/icons-material/Group";
@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import CollaborationModal from "../components/modals/CollaborationModal";
 import { createRoom } from "../utils/api";
 import { Shape } from "../components/canvas/CanvasUtils";
+
+const LOCAL_STORAGE_KEY = "canvas_shapes";
 
 export default function Canvas() {
   const router = useRouter();
@@ -16,6 +18,29 @@ export default function Canvas() {
   const [roomId, setRoomId] = useState<string>();
   const [shapes, setShapes] = useState<Shape[]>([]);
   const canvasRef = useRef<BaseCanvasHandle>(null);
+  const shapesRef = useRef<Shape[]>([]);
+
+  // Load shapes from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedShapes = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedShapes) {
+        const parsedShapes = JSON.parse(savedShapes);
+        setShapes(parsedShapes);
+        shapesRef.current = parsedShapes;
+      }
+    } catch (error) {
+      console.error("Failed to load shapes from localStorage:", error);
+    }
+  }, []);
+
+  const saveToLocalStorage = (newShapes: Shape[]) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newShapes));
+    } catch (error) {
+      console.error("Failed to save shapes to localStorage:", error);
+    }
+  };
 
   const handleJoinRoom = () => {
     setIsModalOpen(true);
@@ -45,7 +70,17 @@ export default function Canvas() {
   };
 
   const handleDrawShape = (shape: Shape) => {
-    setShapes((prevShapes) => [...prevShapes, shape]);
+    const newShapes = [...shapesRef.current, shape];
+    shapesRef.current = newShapes;
+    setShapes(newShapes);
+    saveToLocalStorage(newShapes);
+  };
+
+  const handleDeleteShape = (shape: Shape) => {
+    const newShapes = shapesRef.current.filter((s) => s !== shape);
+    shapesRef.current = newShapes;
+    setShapes(newShapes);
+    saveToLocalStorage(newShapes);
   };
 
   return (
@@ -87,6 +122,7 @@ export default function Canvas() {
         ref={canvasRef}
         initialShapes={shapes}
         onDrawShape={handleDrawShape}
+        onDeleteShape={handleDeleteShape}
       />
       <CollaborationModal
         open={isModalOpen}
