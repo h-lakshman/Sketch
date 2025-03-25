@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import BaseCanvas, { BaseCanvasHandle } from "../components/canvas/BaseCanvas";
-import { Button } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import GroupIcon from "@mui/icons-material/Group";
 import { useRouter } from "next/navigation";
 import CollaborationModal from "../components/modals/CollaborationModal";
@@ -17,6 +17,8 @@ export default function Canvas() {
   const [roomLink, setRoomLink] = useState<string>();
   const [roomId, setRoomId] = useState<string>();
   const [shapes, setShapes] = useState<Shape[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const canvasRef = useRef<BaseCanvasHandle>(null);
   const shapesRef = useRef<Shape[]>([]);
 
@@ -31,6 +33,8 @@ export default function Canvas() {
       }
     } catch (error) {
       console.error("Failed to load shapes from localStorage:", error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -47,6 +51,7 @@ export default function Canvas() {
   };
 
   const handleStartSession = async (roomName: string) => {
+    setIsCreatingRoom(true);
     try {
       const response = await createRoom(roomName);
       const newRoomId = response.roomId;
@@ -57,7 +62,8 @@ export default function Canvas() {
       setIsSessionActive(true);
     } catch (error) {
       console.error("Failed to create room:", error);
-      return;
+    } finally {
+      setIsCreatingRoom(false);
     }
   };
 
@@ -98,6 +104,7 @@ export default function Canvas() {
           color="primary"
           onClick={handleJoinRoom}
           startIcon={<GroupIcon fontSize="small" />}
+          disabled={isCreatingRoom}
           sx={{
             fontWeight: 600,
             borderRadius: 1.5,
@@ -115,15 +122,32 @@ export default function Canvas() {
             },
           }}
         >
-          Live Collaboration
+          {isCreatingRoom ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "Live Collaboration"
+          )}
         </Button>
       </div>
-      <BaseCanvas
-        ref={canvasRef}
-        initialShapes={shapes}
-        onDrawShape={handleDrawShape}
-        onDeleteShape={handleDeleteShape}
-      />
+      {isLoading ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <CircularProgress />
+        </div>
+      ) : (
+        <BaseCanvas
+          ref={canvasRef}
+          initialShapes={shapes}
+          onDrawShape={handleDrawShape}
+          onDeleteShape={handleDeleteShape}
+        />
+      )}
       <CollaborationModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -132,6 +156,7 @@ export default function Canvas() {
         isSessionActive={isSessionActive}
         roomLink={roomLink}
         isInRoom={false}
+        isLoading={isCreatingRoom}
       />
     </div>
   );

@@ -7,16 +7,20 @@ import BaseCanvas, {
 import { Shape, ShapeType } from "@/app/components/canvas/CanvasUtils";
 import { getShapes } from "@/app/utils/api";
 import WebSocketClient from "@/app/utils/WebSocketClient";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 export default function Canvas({ roomId }: { roomId: string }) {
   const [isConnected, setIsConnected] = useState(false);
   const [initialShapes, setInitialShapes] = useState<Shape[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<BaseCanvasHandle>(null);
   const wsClient = WebSocketClient.getInstance();
 
   useEffect(() => {
     const fetchShapes = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await getShapes(roomId);
         const shapes = response.shapes
@@ -103,6 +107,7 @@ export default function Canvas({ roomId }: { roomId: string }) {
         setInitialShapes(shapes);
       } catch (error) {
         console.error("Error fetching shapes:", error);
+        setError("Failed to load canvas data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -347,7 +352,42 @@ export default function Canvas({ roomId }: { roomId: string }) {
   };
 
   if (loading) {
-    return <AuthLoading />;
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          gap: 2,
+        }}
+      >
+        <CircularProgress />
+        <Typography variant="body1" color="text.secondary">
+          Loading canvas...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          gap: 2,
+        }}
+      >
+        <Typography variant="body1" color="error">
+          {error}
+        </Typography>
+      </Box>
+    );
   }
 
   if (!isConnected) {
@@ -355,13 +395,11 @@ export default function Canvas({ roomId }: { roomId: string }) {
   }
 
   return (
-    <div>
-      <BaseCanvas
-        ref={canvasRef}
-        initialShapes={initialShapes}
-        onDrawShape={handleDrawShape}
-        onDeleteShape={handleDeleteShape}
-      />
-    </div>
+    <BaseCanvas
+      ref={canvasRef}
+      initialShapes={initialShapes}
+      onDrawShape={handleDrawShape}
+      onDeleteShape={handleDeleteShape}
+    />
   );
 }

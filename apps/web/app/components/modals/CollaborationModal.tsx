@@ -26,6 +26,7 @@ interface CollaborationModalProps {
   isSessionActive: boolean;
   roomLink?: string;
   isInRoom?: boolean;
+  isLoading?: boolean;
 }
 
 export default function CollaborationModal({

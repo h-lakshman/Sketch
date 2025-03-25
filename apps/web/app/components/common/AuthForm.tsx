@@ -207,7 +207,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             </Box>
           </form>
 
-          <Box sx={{ mt: 3 }}>
+          {/* <Box sx={{ mt: 3 }}>
             <Divider>
               <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
                 OR CONTINUE WITH
@@ -222,7 +222,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             >
               Sign {isSignIn ? "in" : "up"} with Google
             </Button>
-          </Box>
+          </Box> */}
 
           <Typography
             variant="body2"

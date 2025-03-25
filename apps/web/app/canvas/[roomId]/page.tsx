@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import BaseCanvas from "../../components/canvas/BaseCanvas";
-import { Button } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import GroupIcon from "@mui/icons-material/Group";
 import { useRouter, useParams } from "next/navigation";
 import CollaborationModal from "../../components/modals/CollaborationModal";
@@ -11,13 +11,15 @@ export default function RoomCanvas() {
   const router = useRouter();
   const params = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSessionActive, setIsSessionActive] = useState(true); // Start as true since we're in a room
+  const [isSessionActive, setIsSessionActive] = useState(true);
   const [roomLink, setRoomLink] = useState<string>();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const roomId = params?.roomId;
     if (roomId) {
       setRoomLink(`${window.location.origin}/canvas/${roomId}`);
+      setIsLoading(false);
     }
   }, [params?.roomId]);
 
@@ -31,6 +33,21 @@ export default function RoomCanvas() {
     router.push("/canvas");
     setIsModalOpen(false);
   };
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "relative" }}>
