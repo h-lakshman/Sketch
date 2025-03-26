@@ -40,9 +40,6 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    environment:
-      NEXT_PUBLIC_HTTP_API_URL: http://localhost:3001
-      NEXT_PUBLIC_WS_API_URL: ws://localhost:3002
     ports:
       - "3000:3000"
     depends_on:
