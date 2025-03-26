@@ -1,4 +1,4 @@
-import { WEBSOCKET_URL } from "@/app/config";
+import { WEBSOCKET_URL } from "./config";
 import {
   Shape,
   ShapeType,

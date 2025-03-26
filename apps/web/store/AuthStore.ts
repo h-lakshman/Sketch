@@ -60,10 +60,13 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   signIn: async (username: string, password: string) => {
     try {
       set({ loading: true, error: "", loginSuccess: false });
-      const request = await axios.post("http://localhost:3001/auth/login", {
-        username: username,
-        password: password,
-      });
+      const request = await axios.post(
+        "https://sketchapi.vaibz.xyz/auth/login",
+        {
+          username: username,
+          password: password,
+        }
+      );
       const data = request.data;
 
       set({
@@ -95,11 +98,14 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   signUp: async (username: string, password: string, name: string) => {
     try {
       set({ loading: true, error: "", signUpSuccess: false });
-      const request = await axios.post("http://localhost:3001/auth/register", {
-        username: username,
-        password: password,
-        name: name,
-      });
+      const request = await axios.post(
+        "https://sketchapi.vaibz.xyz/auth/register",
+        {
+          username: username,
+          password: password,
+          name: name,
+        }
+      );
       const data = request.data;
       if (request.status === 200) {
         set({
