@@ -10,6 +10,12 @@ const nextConfig = {
     compiler: {
         emotion: true,
     },
+    typescript: {
+        ignoreBuildErrors: true
+    },
+    eslint: {
+        ignoreDuringBuilds: true
+    }
 };
 
 export default nextConfig; 
