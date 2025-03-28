@@ -36,5 +36,4 @@ WORKDIR /app/apps/http-server
 RUN pnpm run build
 
 EXPOSE 3001
-
-CMD ["pnpm", "run", "start"] 
+CMD [ "sh", "-c", "pnpm --filter db exec prisma migrate deploy && pnpm run start" ]
