@@ -107,7 +107,7 @@ class WebSocketServerSingleton {
   private users: Map<string, User> = new Map();
 
   private constructor() {
-    this.wss = new WSServer({ port: 8080 });
+    this.wss = new WSServer({ port: 3002 });
     this.setupWebSocketServer();
   }
 
